@@ -71,7 +71,7 @@ O app precisa ficar em um endereço `https://` para a câmera e o login funciona
 2. Clique em **New repository**, nome `registro-facil`, público, e crie.
 3. Na página do repositório, use **Add file › Upload files** e envie a pasta `docs` inteira (arraste a pasta).
 4. Em **Settings › Pages**, em "Build and deployment", escolha *Deploy from a branch*, branch `main`, pasta `/docs`. Salve.
-5. Em um ou dois minutos o app estará em `https://SEU-USUARIO.github.io/registro-facil/`.
+5. Em um ou dois minutos o app estará em `https://alfero1968.github.io/registro-facil/`.
 
 Esse é o link que os professores abrem no celular. No Android, o Chrome oferece "Instalar app"; no iPhone, Safari › Compartilhar › "Adicionar à Tela de Início".
 
@@ -93,7 +93,7 @@ Decisão do projeto: o Google Drive é o caminho principal, porque cada professo
 6. Menu ☰ › **APIs e serviços › Credenciais › Criar credenciais › ID do cliente OAuth**.
    - Tipo de aplicativo: **Aplicativo da Web**
    - Nome: `Registro Fácil web`
-   - **Origens JavaScript autorizadas**: `https://SEU-USUARIO.github.io` (só o domínio, sem `/registro-facil`)
+   - **Origens JavaScript autorizadas**: `https://alfero1968.github.io` (só o domínio, sem `/registro-facil`)
    - Não precisa preencher "URIs de redirecionamento".
    - Criar. Copie o **ID do cliente** (termina em `.apps.googleusercontent.com`).
 7. Abra `app.html`, encontre no início do script o bloco `ADMIN` e cole o ID em `GOOGLE_CLIENT_ID`. Rode `node build.js` e envie a pasta `docs` de novo ao GitHub.
@@ -110,7 +110,7 @@ O app já está pronto para o OneDrive. Ele só passa a funcionar quando dois pa
 
 1. Entre em https://portal.azure.com com uma conta Microsoft (pode ser pessoal). Procure **Registros de aplicativo** › **Novo registro**.
 2. Nome: `Registro Fácil`. Tipos de conta: **"Contas em qualquer diretório organizacional e contas pessoais da Microsoft"**.
-3. URI de redirecionamento: tipo **Aplicativo de página única (SPA)**, valor `https://SEU-USUARIO.github.io/registro-facil/` (com a barra final). Registrar.
+3. URI de redirecionamento: tipo **Aplicativo de página única (SPA)**, valor `https://alfero1968.github.io/registro-facil/` (com a barra final). Registrar.
 4. Copie o **ID do aplicativo (cliente)** da visão geral.
 5. **Permissões de API › Adicionar permissão › Microsoft Graph › Permissões delegadas**: marque `Files.ReadWrite` e `User.Read`.
 6. Cole o ID em `MICROSOFT_CLIENT_ID` no bloco `ADMIN` de `app.html`, rode `node build.js` e publique.
