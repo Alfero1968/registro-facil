@@ -1,6 +1,6 @@
 // Registro Fácil — cache do app para abrir sem internet.
 // Ao publicar uma versão nova, mude o número abaixo para os celulares atualizarem.
-const CACHE = 'registro-facil-v1';
+const CACHE = 'registro-facil-v2';
 const ARQUIVOS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARQUIVOS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
