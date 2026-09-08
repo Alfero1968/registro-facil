@@ -1,0 +1,17 @@
+{
+  "name": "Registro Fácil",
+  "short_name": "Registro Fácil",
+  "description": "Registre o conteúdo de cada aula com foto ou texto e guarde no seu OneDrive ou Google Drive, organizado por turma, trimestre e data.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "pt-BR",
+  "background_color": "#F5F7F4",
+  "theme_color": "#2E6B57",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
