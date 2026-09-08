@@ -1,0 +1,642 @@
+<title>Registro Fácil</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#F5F7F4; --surface:#FFFFFF; --surface-2:#EBEFEA; --line:#D6DDD7;
+  --ink:#1A2320; --muted:#5E6B65; --faint:#8C978F;
+  --accent:#2E6B57; --accent-ink:#FFFFFF; --accent-soft:#DCEBE4;
+  --warn:#B8741A; --warn-soft:#F6E9D3; --bad:#B3402F; --bad-soft:#F5DCD7; --ok:#2E6B57; --ok-soft:#DCEBE4;
+  --shadow:0 1px 2px rgba(26,35,32,.08),0 8px 24px -12px rgba(26,35,32,.25);
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#131A17; --surface:#1C2521; --surface-2:#243029; --line:#33413A;
+    --ink:#E9EEEA; --muted:#A3AFA8; --faint:#6F7C75;
+    --accent:#6DBEA0; --accent-ink:#0F1A15; --accent-soft:#213A31;
+    --warn:#E0A24E; --warn-soft:#3A2D18; --bad:#E27A69; --bad-soft:#3E211C; --ok:#6DBEA0; --ok-soft:#213A31;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131A17; --surface:#1C2521; --surface-2:#243029; --line:#33413A;
+  --ink:#E9EEEA; --muted:#A3AFA8; --faint:#6F7C75;
+  --accent:#6DBEA0; --accent-ink:#0F1A15; --accent-soft:#213A31;
+  --warn:#E0A24E; --warn-soft:#3A2D18; --bad:#E27A69; --bad-soft:#3E211C; --ok:#6DBEA0; --ok-soft:#213A31;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+#app{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg)}
+@media (min-width:640px){#app{border-left:1px solid var(--line);border-right:1px solid var(--line)}}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px 8px}
+.brand{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.brand svg{width:26px;height:26px}
+main{flex:1;padding:8px 18px 96px}
+h1{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.15;margin:8px 0 4px;text-wrap:balance;letter-spacing:-.015em}
+h2{font-family:var(--display);font-weight:700;font-size:19px;margin:22px 0 8px;letter-spacing:-.01em}
+h3{font-family:var(--display);font-weight:700;font-size:16px;margin:16px 0 6px}
+p{margin:6px 0;max-width:60ch}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+label{display:block;font-weight:700;font-size:14px;margin:14px 0 6px}
+label .hint{font-weight:400;color:var(--muted)}
+input[type=text],input[type=date],input[type=time],input[type=number],select,textarea{
+  width:100%;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 12px;min-height:46px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible,.chip:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+textarea{min-height:110px;resize:vertical;line-height:1.45}
+input[type=date],input[type=time]{font-family:var(--mono);font-size:15px}
+.btn{font:inherit;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:12px 16px;min-height:48px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--accent);padding-left:6px;padding-right:6px}
+.btn.block{width:100%}
+.btn.big{font-size:18px;min-height:56px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:14px;border-radius:9px}
+.row{display:flex;gap:10px;align-items:center}
+.row.wrap{flex-wrap:wrap}
+.row.between{justify-content:space-between}
+.stack{display:flex;flex-direction:column;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.now{background:var(--accent);color:var(--accent-ink);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow)}
+.now .eyebrow{color:inherit;opacity:.8}
+.now .turma{font-family:var(--display);font-weight:700;font-size:34px;line-height:1;margin:6px 0 4px;letter-spacing:-.02em}
+.now .meta{font-family:var(--mono);font-size:14px;opacity:.9}
+.now.none{background:var(--surface-2);color:var(--ink);box-shadow:none;border:1px dashed var(--line)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 6px;scrollbar-width:thin}
+.chip{flex:0 0 auto;font:inherit;font-size:14px;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 14px;cursor:pointer;white-space:nowrap}
+.chip .t{font-family:var(--mono);font-weight:400;color:var(--muted);margin-left:6px;font-size:13px}
+.chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.chip.on .t{color:inherit}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;border-radius:999px;padding:3px 10px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.busy{background:var(--accent-soft);color:var(--accent)}
+.pill.busy::before{animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.2}}
+@media (prefers-reduced-motion:reduce){.pill.busy::before{animation:none}}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.photo{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line)}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.photo button{position:absolute;top:4px;right:4px;border:0;background:rgba(26,35,32,.75);color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px;line-height:1}
+.add-photo{aspect-ratio:1;border:2px dashed var(--line);border-radius:10px;background:transparent;color:var(--accent);font:inherit;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:14px}
+.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--surface);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:5}
+.tabs button{position:relative;font:inherit;font-size:12px;font-weight:700;border:0;background:transparent;color:var(--muted);padding:8px 4px;border-radius:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabs button svg{width:22px;height:22px}
+.tabs button.on{color:var(--accent);background:var(--accent-soft)}
+.tabs .badge{position:absolute;top:4px;left:calc(50% + 8px);background:var(--warn);color:#fff;font-size:11px;border-radius:999px;padding:0 6px;min-width:18px;line-height:18px}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+.item .when{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:center;line-height:1.3;min-width:52px}
+.item .when b{display:block;font-size:20px;color:var(--ink);font-weight:600}
+.item .title{font-family:var(--display);font-weight:700;font-size:17px}
+.item .body{color:var(--muted);font-size:14px;margin-top:2px;white-space:pre-wrap;overflow-wrap:anywhere}
+.item .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.daysep{margin:18px 0 6px;font-family:var(--mono);font-size:13px;color:var(--muted);display:flex;align-items:center;gap:10px}
+.daysep::after{content:"";flex:1;height:1px;background:var(--line)}
+.path{font-family:var(--mono);font-size:13px;background:var(--surface-2);border-radius:8px;padding:8px 10px;overflow-x:auto;white-space:nowrap;color:var(--muted)}
+.path b{color:var(--ink);font-weight:600}
+.steps{display:flex;gap:6px;margin:4px 0 12px}
+.steps i{flex:1;height:4px;border-radius:2px;background:var(--line)}
+.steps i.on{background:var(--accent)}
+.notice{border-radius:12px;padding:12px 14px;font-size:14px;border:1px solid var(--line);background:var(--surface-2)}
+.notice.warn{background:var(--warn-soft);border-color:transparent;color:var(--ink)}
+.notice.bad{background:var(--bad-soft);border-color:transparent}
+.notice.ok{background:var(--ok-soft);border-color:transparent}
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:700;font-size:14px;box-shadow:var(--shadow);z-index:20;max-width:90%;text-align:center}
+.sched{display:flex;flex-direction:column;gap:6px}
+.sched .s{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.sched .s .t{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer}
+.opt input{margin-top:4px;accent-color:var(--accent)}
+.opt.on{border-color:var(--accent);background:var(--accent-soft)}
+details{border:1px solid var(--line);border-radius:12px;padding:0 14px;background:var(--surface)}
+details summary{cursor:pointer;font-weight:700;padding:12px 0}
+details[open] summary{border-bottom:1px solid var(--line);margin-bottom:8px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+
+<div id="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="4" width="19" height="13" rx="2" fill="var(--accent)"/><path d="M6 8.5h8M6 11.5h6" stroke="var(--accent-ink)" stroke-width="1.6" stroke-linecap="round"/><path d="M8 20h8" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg>
+      Registro Fácil
+    </div>
+    <div id="cloudPill"></div>
+  </header>
+  <main id="view" aria-live="polite"></main>
+  <nav class="tabs" id="tabs" hidden>
+    <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16v11H4z"/><path d="M8 11h8M8 14h5"/></svg>Registrar</button>
+    <button data-tab="hist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h5l2 2h11v11H3z"/></svg>Histórico<span class="badge" id="pendBadge" hidden></span></button>
+    <button data-tab="cfg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>Ajustes</button>
+  </nav>
+</div>
+<input type="file" id="fileIn" accept="image/*" capture="environment" multiple class="sr" tabindex="-1">
+
+<script>
+/* =====================================================================
+   CONFIGURAÇÃO DO ADMINISTRADOR (mentor)
+   Cole aqui os identificadores dos aplicativos que você registrar.
+   Eles também podem ser informados na tela Ajustes › Avançado.
+   ===================================================================== */
+const ADMIN = {
+  MICROSOFT_CLIENT_ID: "",   // Azure › Registros de aplicativo › ID do aplicativo (cliente)
+  GOOGLE_CLIENT_ID: "",      // Google Cloud › Credenciais › ID do cliente OAuth (Web)
+  PASTA_RAIZ: "Registro Fácil"
+};
+/* ===================================================================== */
+
+const $ = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+const esc = s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = ()=>Date.now().toString(36).slice(-5)+Math.random().toString(36).slice(2,5);
+const DIAS = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+const DIAS_CURTO = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const pad = n=>String(n).padStart(2,'0');
+const isoHoje = (d=new Date())=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const br = iso=>iso? iso.split('-').reverse().join('/') : '';
+const hm = d=>`${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const parseISO = iso=>{const [y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d);};
+const minutos = t=>{const [h,m]=t.split(':').map(Number);return h*60+m;};
+
+/* ---------- Estado / configuração ---------- */
+const CFG_KEY='rf_cfg_v1';
+const DEFAULT_CFG = ()=>({
+  nome:'', disciplina:'', turmas:[], horario:[],
+  trimestres:[{inicio:'',fim:''},{inicio:'',fim:''},{inicio:'',fim:''}],
+  nuvem:null, setupDone:false, msClientId:'', gClientId:'', criadoEm:new Date().toISOString()
+});
+let cfg = loadCfg();
+function loadCfg(){ try{ const c=JSON.parse(localStorage.getItem(CFG_KEY)); return c? Object.assign(DEFAULT_CFG(),c):DEFAULT_CFG(); }catch(e){ return DEFAULT_CFG(); } }
+function saveCfg(){ try{ localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }catch(e){} }
+const msClientId = ()=>cfg.msClientId||ADMIN.MICROSOFT_CLIENT_ID;
+const gClientId = ()=>cfg.gClientId||ADMIN.GOOGLE_CLIENT_ID;
+const turmaNome = id=>(cfg.turmas.find(t=>t.id===id)||{}).nome||'—';
+
+/* ---------- Banco local (IndexedDB) ---------- */
+const DB = {
+  _db:null,
+  open(){ return this._db? Promise.resolve(this._db) : new Promise((res,rej)=>{
+    const r=indexedDB.open('registro_facil',1);
+    r.onupgradeneeded=()=>{ const s=r.result.createObjectStore('registros',{keyPath:'id'}); s.createIndex('data','data'); };
+    r.onsuccess=()=>{ this._db=r.result; res(this._db); }; r.onerror=()=>rej(r.error);
+  });},
+  async tx(mode,fn){ const db=await this.open(); return new Promise((res,rej)=>{ const t=db.transaction('registros',mode); const st=t.objectStore('registros'); const q=fn(st); t.oncomplete=()=>res(q&&q.result); t.onerror=()=>rej(t.error); }); },
+  put(r){ return this.tx('readwrite',s=>s.put(r)); },
+  get(id){ return this.tx('readonly',s=>s.get(id)); },
+  del(id){ return this.tx('readwrite',s=>s.delete(id)); },
+  all(){ return this.tx('readonly',s=>s.getAll()); },
+  clear(){ return this.tx('readwrite',s=>s.clear()); }
+};
+
+/* ---------- Regras: aula atual e trimestre ---------- */
+function aulasDoDia(dia){ return cfg.horario.filter(h=>h.dia===dia).sort((a,b)=>minutos(a.inicio)-minutos(b.inicio)); }
+function aulaAgora(now=new Date()){
+  const lista=aulasDoDia(now.getDay()); const m=now.getHours()*60+now.getMinutes();
+  let hit=lista.find(h=>m>=minutos(h.inicio)&&m<=minutos(h.fim)); if(hit) return {aula:hit,motivo:'agora'};
+  hit=[...lista].reverse().find(h=>m>minutos(h.fim)&&m-minutos(h.fim)<=25); if(hit) return {aula:hit,motivo:'terminou'};
+  hit=lista.find(h=>m<minutos(h.inicio)&&minutos(h.inicio)-m<=10); if(hit) return {aula:hit,motivo:'comeca'};
+  return {aula:null,motivo:lista.length?'fora':'semaula'};
+}
+function trimestreDe(iso){
+  for(let i=0;i<3;i++){ const t=cfg.trimestres[i]; if(t.inicio&&t.fim&&iso>=t.inicio&&iso<=t.fim) return `${i+1}º Trimestre`; }
+  return null;
+}
+function validarTrimestres(tr){
+  for(let i=0;i<3;i++){ if(!tr[i].inicio||!tr[i].fim) return `Informe início e término do ${i+1}º Trimestre.`; if(tr[i].inicio>tr[i].fim) return `No ${i+1}º Trimestre, o início está depois do término.`; }
+  for(let i=1;i<3;i++){ if(tr[i].inicio<=tr[i-1].fim) return `O ${i+1}º Trimestre começa antes do fim do ${i}º. As datas não podem se sobrepor.`; }
+  return null;
+}
+
+/* ---------- Fotos: redução de tamanho ---------- */
+async function comprimirFoto(file, max=1600, q=0.82){
+  let bmp;
+  try{ bmp=await createImageBitmap(file,{imageOrientation:'from-image'}); }
+  catch(e){ bmp=await new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=URL.createObjectURL(file); }); }
+  const w=bmp.width,h=bmp.height,s=Math.min(1,max/Math.max(w,h));
+  const c=document.createElement('canvas'); c.width=Math.round(w*s); c.height=Math.round(h*s);
+  c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+  const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',q));
+  return blob||file;
+}
+
+/* ---------- Conteúdo dos arquivos de texto ---------- */
+function textoRegistro(r){
+  const d=parseISO(r.data);
+  return [
+`REGISTRO DE AULA — Registro Fácil`,
+`Professor(a): ${cfg.nome}`,
+`Disciplina: ${cfg.disciplina}`,
+`Turma: ${r.turmaNome}`,
+`Data da aula: ${br(r.data)} (${DIAS[d.getDay()].toLowerCase()})`,
+`Horário: ${r.horaInicio? r.horaInicio+(r.horaFim?' às '+r.horaFim:'') : 'não informado'}`,
+`Trimestre: ${r.trimestre}`,
+``,
+`CONTEÚDO TRABALHADO`,
+r.conteudo||'(apenas fotos)',
+``,
+`Fotos: ${r.fotos.length? r.fotos.map(f=>f.nome).join(', ') : 'nenhuma'}`,
+`Registro criado em: ${new Date(r.criadoEm).toLocaleString('pt-BR')}`,
+`Identificador: ${r.id}`
+  ].join('\n');
+}
+function jsonRegistro(r){
+  return JSON.stringify({id:r.id,professor:cfg.nome,disciplina:cfg.disciplina,turma:r.turmaNome,data:r.data,horaInicio:r.horaInicio,horaFim:r.horaFim,trimestre:r.trimestre,conteudo:r.conteudo,fotos:r.fotos.map(f=>f.nome),criadoEm:r.criadoEm},null,2);
+}
+function nomeBase(r){ return `aula-${(r.horaInicio||'00:00').replace(':','h')}-${r.id.slice(-4)}`; }
+function pastaDe(r){ return [ADMIN.PASTA_RAIZ, r.turmaNome, r.trimestre, r.data]; }
+function arquivosDe(r){
+  const base=nomeBase(r); const out=[];
+  r.fotos.forEach((f,i)=>{ if(f.blob) out.push({nome:f.nome||`${base}-foto-${pad(i+1)}.jpg`,blob:f.blob,tipo:'image/jpeg'}); });
+  out.push({nome:`${base}-conteudo.txt`,blob:new Blob([textoRegistro(r)],{type:'text/plain'}),tipo:'text/plain'});
+  out.push({nome:`${base}-registro.json`,blob:new Blob([jsonRegistro(r)],{type:'application/json'}),tipo:'application/json'});
+  return out;
+}
+
+/* ---------- Provedores de nuvem ---------- */
+function loadScript(src){ return new Promise((res,rej)=>{ if($$(`script[src="${src}"]`).length) return res(); const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>rej(new Error('Não foi possível carregar '+src)); document.head.appendChild(s); }); }
+async function fetchJSON(url,opt={}){
+  let res; try{ res=await fetch(url,opt); }catch(e){ throw new Error('Sem conexão com o serviço de nuvem. Verifique a internet.'); }
+  if(!res.ok){ let msg=`Erro ${res.status}`; try{ const j=await res.json(); msg+=': '+(j.error?.message||j.error_description||JSON.stringify(j.error||j)); }catch(e){} const err=new Error(msg); err.status=res.status; throw err; }
+  const ct=res.headers.get('content-type')||''; return ct.includes('json')? res.json() : res.text();
+}
+
+const OneDrive = {
+  msal:null, account:null, scopes:['Files.ReadWrite','User.Read'],
+  async init(){
+    if(this.msal) return;
+    if(!msClientId()) throw new Error('Falta o ID do aplicativo Microsoft. Peça ao mentor ou informe em Ajustes › Avançado.');
+    await loadScript('https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.1/lib/msal-browser.min.js');
+    this.msal=new msal.PublicClientApplication({auth:{clientId:msClientId(),authority:'https://login.microsoftonline.com/common',redirectUri:location.origin+location.pathname},cache:{cacheLocation:'localStorage'}});
+    await this.msal.initialize();
+    const r=await this.msal.handleRedirectPromise().catch(e=>{ console.warn(e); return null; });
+    if(r&&r.account) this.msal.setActiveAccount(r.account);
+    this.account=this.msal.getActiveAccount()||this.msal.getAllAccounts()[0]||null;
+    if(this.account) this.msal.setActiveAccount(this.account);
+  },
+  async conectar(){ await this.init(); await this.msal.loginRedirect({scopes:this.scopes,prompt:'select_account'}); },
+  async desconectar(){ await this.init(); await this.msal.logoutRedirect({postLogoutRedirectUri:location.origin+location.pathname}); },
+  async token(){
+    await this.init(); if(!this.account) throw new Error('Conecte sua conta Microsoft em Ajustes.');
+    try{ return (await this.msal.acquireTokenSilent({scopes:this.scopes,account:this.account})).accessToken; }
+    catch(e){ await this.msal.acquireTokenRedirect({scopes:this.scopes,account:this.account}); throw new Error('Redirecionando para renovar o acesso…'); }
+  },
+  conta(){ return this.account? (this.account.username||this.account.name) : null; },
+  encPath(segs){ return segs.map(encodeURIComponent).join('/'); },
+  async garantirPasta(segs, tok){
+    const H={Authorization:'Bearer '+tok,'Content-Type':'application/json'};
+    for(let i=0;i<segs.length;i++){
+      const parent=segs.slice(0,i); const url=parent.length? `https://graph.microsoft.com/v1.0/me/drive/root:/${this.encPath(parent)}:/children` : 'https://graph.microsoft.com/v1.0/me/drive/root/children';
+      try{ await fetchJSON(url,{method:'POST',headers:H,body:JSON.stringify({name:segs[i],folder:{},'@microsoft.graph.conflictBehavior':'fail'})}); }
+      catch(e){ if(e.status!==409) throw e; }
+    }
+    const item=await fetchJSON(`https://graph.microsoft.com/v1.0/me/drive/root:/${this.encPath(segs)}`,{headers:{Authorization:'Bearer '+tok}});
+    return item.webUrl;
+  },
+  async enviar(r, onStep){
+    const tok=await this.token(); const segs=pastaDe(r);
+    onStep('Criando pastas…'); const link=await this.garantirPasta(segs,tok);
+    const arqs=arquivosDe(r);
+    for(let i=0;i<arqs.length;i++){
+      onStep(`Enviando ${i+1} de ${arqs.length}…`);
+      await fetchJSON(`https://graph.microsoft.com/v1.0/me/drive/root:/${this.encPath([...segs,arqs[i].nome])}:/content?@microsoft.graph.conflictBehavior=replace`,{method:'PUT',headers:{Authorization:'Bearer '+tok,'Content-Type':arqs[i].tipo},body:arqs[i].blob});
+    }
+    return {pasta:segs.join('/'),link,arquivos:arqs.map(a=>a.nome)};
+  }
+};
+
+const GDrive = {
+  client:null, tok:null, exp:0,
+  async init(){
+    if(this.client) return;
+    if(!gClientId()) throw new Error('Falta o ID do cliente Google. Peça ao mentor ou informe em Ajustes › Avançado.');
+    await loadScript('https://accounts.google.com/gsi/client');
+    this.client=google.accounts.oauth2.initTokenClient({client_id:gClientId(),scope:'https://www.googleapis.com/auth/drive.file',callback:()=>{}});
+    try{ const s=JSON.parse(localStorage.getItem('rf_g_tok')); if(s&&s.exp>Date.now()){ this.tok=s.tok; this.exp=s.exp; } }catch(e){}
+  },
+  async token(interativo=true){
+    await this.init(); if(this.tok&&this.exp>Date.now()+60000) return this.tok;
+    if(!interativo) throw new Error('Toque em “Conectar Google Drive” para renovar o acesso.');
+    return new Promise((res,rej)=>{
+      this.client.callback=resp=>{ if(resp.error) return rej(new Error('Acesso ao Google não autorizado: '+resp.error)); this.tok=resp.access_token; this.exp=Date.now()+resp.expires_in*1000; localStorage.setItem('rf_g_tok',JSON.stringify({tok:this.tok,exp:this.exp})); localStorage.setItem('rf_g_conectado','1'); res(this.tok); };
+      this.client.error_callback=e=>rej(new Error('Janela do Google fechada ou bloqueada. Tente de novo.'));
+      this.client.requestAccessToken({prompt:localStorage.getItem('rf_g_conectado')?'':'consent'});
+    });
+  },
+  async conectar(){ await this.token(true); },
+  async desconectar(){ if(this.tok){ try{ google.accounts.oauth2.revoke(this.tok,()=>{}); }catch(e){} } this.tok=null; this.exp=0; localStorage.removeItem('rf_g_tok'); localStorage.removeItem('rf_g_conectado'); },
+  conta(){ return localStorage.getItem('rf_g_conectado')? 'Google Drive conectado' : null; },
+  q(s){ return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); },
+  async achar(nome,parent,tok,folder){
+    const mime=folder? `mimeType='application/vnd.google-apps.folder' and ` : `mimeType!='application/vnd.google-apps.folder' and `;
+    const q=`name='${this.q(nome)}' and '${parent}' in parents and ${mime}trashed=false`;
+    const j=await fetchJSON(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)&pageSize=1`,{headers:{Authorization:'Bearer '+tok}});
+    return j.files&&j.files[0];
+  },
+  async garantirPasta(segs,tok){
+    let parent='root';
+    for(const nome of segs){
+      let f=await this.achar(nome,parent,tok,true);
+      if(!f) f=await fetchJSON('https://www.googleapis.com/drive/v3/files?fields=id',{method:'POST',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({name:nome,mimeType:'application/vnd.google-apps.folder',parents:[parent]})});
+      parent=f.id;
+    }
+    return parent;
+  },
+  async enviar(r,onStep){
+    const tok=await this.token(true); const segs=pastaDe(r);
+    onStep('Criando pastas…'); const folderId=await this.garantirPasta(segs,tok);
+    const arqs=arquivosDe(r);
+    for(let i=0;i<arqs.length;i++){
+      onStep(`Enviando ${i+1} de ${arqs.length}…`); const a=arqs[i];
+      const ex=await this.achar(a.nome,folderId,tok,false);
+      if(ex){ await fetchJSON(`https://www.googleapis.com/upload/drive/v3/files/${ex.id}?uploadType=media`,{method:'PATCH',headers:{Authorization:'Bearer '+tok,'Content-Type':a.tipo},body:a.blob}); }
+      else{
+        const b='rf'+uid(); const meta=JSON.stringify({name:a.nome,parents:[folderId]});
+        const body=new Blob([`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${b}\r\nContent-Type: ${a.tipo}\r\n\r\n`,a.blob,`\r\n--${b}--`]);
+        await fetchJSON('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{Authorization:'Bearer '+tok,'Content-Type':`multipart/related; boundary=${b}`},body});
+      }
+    }
+    return {pasta:segs.join('/'),link:`https://drive.google.com/drive/folders/${folderId}`,arquivos:arqs.map(a=>a.nome)};
+  }
+};
+
+const Demo = {
+  conta(){ return 'Modo demonstração'; },
+  async enviar(r,onStep){ onStep('Simulando envio…'); await new Promise(r=>setTimeout(r,900)); return {pasta:pastaDe(r).join('/'),link:null,arquivos:arquivosDe(r).map(a=>a.nome),demo:true}; }
+};
+const provedor = ()=>({onedrive:OneDrive,gdrive:GDrive,demo:Demo}[cfg.nuvem]||null);
+const nomeNuvem = ()=>({onedrive:'OneDrive da escola',gdrive:'Google Drive',demo:'Demonstração'}[cfg.nuvem]||'Nuvem');
+
+/* ---------- Fila de envio ---------- */
+let enviando=false;
+async function enviarPendentes(){
+  if(enviando) return; const prov=provedor(); if(!prov) return;
+  enviando=true;
+  try{
+    const todos=(await DB.all()).filter(r=>r.status==='pendente'||r.status==='erro');
+    for(const r of todos){
+      if(!navigator.onLine){ break; }
+      r.status='enviando'; r.etapa='Preparando…'; r.erro=null; await DB.put(r); refreshStatus(r.id);
+      try{
+        const res=await prov.enviar(r,e=>{ r.etapa=e; refreshStatus(r.id); });
+        r.status='salvo'; r.remoto=res; r.salvoEm=new Date().toISOString(); r.etapa=null;
+        if(!res.demo) r.fotos=r.fotos.map(f=>({nome:f.nome,blob:null}));
+        await DB.put(r); toast((res.demo?'Guardado (demonstração): ':'Salvo na nuvem: ')+r.turmaNome);
+      }catch(e){
+        r.status='erro'; r.erro=e.message; r.etapa=null; await DB.put(r);
+        if(/Redirecionando/.test(e.message)) break;
+      }
+      refreshStatus(r.id);
+    }
+  } finally{ enviando=false; renderPill(); atualizarBadge(); if(tab==='hist') render(); }
+}
+window.addEventListener('online',()=>{ toast('Internet de volta. Enviando registros…'); renderPill(); enviarPendentes(); });
+window.addEventListener('offline',renderPill);
+
+/* ---------- UI ---------- */
+let tab='home', obStep=0, rascunho=novoRascunho();
+const view=$('#view');
+function novoRascunho(){ const {aula}=aulaAgora(); return {turmaId:aula?aula.turmaId:null, horarioId:aula?aula.id:null, data:isoHoje(), conteudo:'', fotos:[], manual:false}; }
+function toast(msg,ms=2600){ $$('.toast').forEach(t=>t.remove()); const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),ms); }
+function renderPill(){
+  const p=$('#cloudPill'); if(!cfg.setupDone){ p.innerHTML=''; return; }
+  const prov=provedor(); const conta=prov&&prov.conta();
+  const cls = !prov? 'bad' : cfg.nuvem==='demo'? 'warn' : conta? (navigator.onLine?'ok':'warn') : 'bad';
+  const txt = !prov? 'Sem nuvem' : cfg.nuvem==='demo'? 'Demonstração' : !conta? nomeNuvem()+' desconectado' : navigator.onLine? nomeNuvem() : 'Sem internet';
+  p.innerHTML=`<span class="pill ${cls}">${esc(txt)}</span>`;
+}
+async function atualizarBadge(){ const n=(await DB.all()).filter(r=>r.status!=='salvo').length; const b=$('#pendBadge'); b.hidden=!n; b.textContent=n; }
+function refreshStatus(id){ const el=$(`[data-status="${id}"]`); if(!el) return; DB.get(id).then(r=>{ if(r) el.outerHTML=pillStatus(r); }); }
+function pillStatus(r){
+  const m={pendente:['warn',navigator.onLine?'Aguardando envio':'Aguardando internet'],enviando:['busy',r.etapa||'Enviando…'],salvo:[r.remoto?.demo?'warn':'ok',r.remoto?.demo?'Salvo (demonstração)':'Salvo na nuvem'],erro:['bad','Falha no envio']}[r.status]||['','?'];
+  return `<span class="pill ${m[0]}" data-status="${r.id}">${esc(m[1])}</span>`;
+}
+
+function render(){
+  renderPill(); atualizarBadge();
+  if(!cfg.setupDone){ $('#tabs').hidden=true; renderOnboarding(); return; }
+  $('#tabs').hidden=false; $$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+  ({home:renderHome,hist:renderHist,cfg:renderCfg})[tab]();
+  window.scrollTo(0,0);
+}
+$('#tabs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; tab=b.dataset.tab; render(); });
+
+/* ----- Cadastro inicial (5 passos) ----- */
+const PASSOS=['Você','Turmas','Horário','Trimestres','Nuvem'];
+function stepsHTML(i){ return `<div class="eyebrow">Passo ${i+1} de ${PASSOS.length} · ${PASSOS[i]}</div><div class="steps">${PASSOS.map((_,k)=>`<i class="${k<=i?'on':''}"></i>`).join('')}</div>`; }
+function renderOnboarding(){
+  const s=obStep; let html='';
+  if(s===0) html=`${stepsHTML(0)}<h1>Bem-vindo(a) ao Registro Fácil</h1><p class="muted">Em cinco passos rápidos o app aprende suas turmas e seu horário. Depois, cada aula é registrada com um toque.</p>
+    ${formPerfil()}
+    <p class="small muted" style="margin-top:18px">Quer só experimentar? <button class="btn ghost sm" id="exemplo">Preencher com dados de exemplo</button></p>
+    <div class="row" style="margin-top:18px"><button class="btn primary block big" id="next">Continuar</button></div>`;
+  if(s===1) html=`${stepsHTML(1)}<h1>Suas turmas</h1><p class="muted">Cada turma vira uma pasta na nuvem. Use o nome como aparece no diário, por exemplo “7º B”.</p>${formTurmas()}<div class="row" style="margin-top:18px"><button class="btn" id="back">Voltar</button><button class="btn primary big" style="flex:1" id="next">Continuar</button></div>`;
+  if(s===2) html=`${stepsHTML(2)}<h1>Horário semanal</h1><p class="muted">Com o horário, o app descobre sozinho qual turma está na sua frente. Você sempre pode corrigir antes de salvar.</p>${formHorario()}<div class="row" style="margin-top:18px"><button class="btn" id="back">Voltar</button><button class="btn primary big" style="flex:1" id="next">Continuar</button></div>`;
+  if(s===3) html=`${stepsHTML(3)}<h1>Trimestres do ano letivo</h1><p class="muted">A data da aula define em qual pasta de trimestre o registro é guardado. Início e término fazem parte do período.</p>${formTrimestres()}<div class="row" style="margin-top:18px"><button class="btn" id="back">Voltar</button><button class="btn primary big" style="flex:1" id="next">Continuar</button></div>`;
+  if(s===4) html=`${stepsHTML(4)}<h1>Onde guardar os registros</h1><p class="muted">Os arquivos ficam na sua própria conta, organizados assim:</p>
+    <div class="path"><b>${esc(ADMIN.PASTA_RAIZ)}</b> / ${esc(cfg.turmas[0]?.nome||'7º B')} / 2º Trimestre / ${isoHoje()} / aula-07h50-…-foto-01.jpg</div>
+    ${formNuvem()}<div class="row" style="margin-top:18px"><button class="btn" id="back">Voltar</button><button class="btn primary big" style="flex:1" id="finish">Concluir cadastro</button></div>`;
+  view.innerHTML=html; ligarForms();
+  $('#exemplo')?.addEventListener('click',()=>{ Object.assign(cfg,exemplo()); saveCfg(); toast('Dados de exemplo carregados'); renderOnboarding(); });
+  $('#back')?.addEventListener('click',()=>{ obStep--; renderOnboarding(); window.scrollTo(0,0); });
+  $('#next')?.addEventListener('click',()=>{ const err=validarPasso(s); if(err) return toast(err,3500); saveCfg(); obStep++; renderOnboarding(); window.scrollTo(0,0); });
+  $('#finish')?.addEventListener('click',()=>{ const err=validarPasso(4); if(err) return toast(err,3500); cfg.setupDone=true; saveCfg(); rascunho=novoRascunho(); tab='home'; render(); toast('Cadastro concluído. Boa aula!'); });
+}
+function validarPasso(s){
+  if(s===0){ if(!cfg.nome.trim()) return 'Informe seu nome.'; if(!cfg.disciplina.trim()) return 'Informe a disciplina.'; }
+  if(s===1&&!cfg.turmas.length) return 'Cadastre pelo menos uma turma.';
+  if(s===2&&!cfg.horario.length) return 'Cadastre pelo menos uma aula no horário.';
+  if(s===3){ const e=validarTrimestres(cfg.trimestres); if(e) return e; }
+  if(s===4){ if(!cfg.nuvem) return 'Escolha onde guardar os registros.'; if(cfg.nuvem!=='demo'&&!provedor().conta()) return `Conecte sua conta do ${nomeNuvem()} ou escolha o modo demonstração.`; }
+  return null;
+}
+function exemplo(){
+  const y=new Date().getFullYear(); const t=[{id:'t1',nome:'7º A'},{id:'t2',nome:'7º B'},{id:'t3',nome:'8º A'}];
+  const h=[]; const grade=[[1,'07:00','07:50','t1'],[1,'07:50','08:40','t2'],[1,'09:00','09:50','t3'],[2,'07:00','07:50','t2'],[2,'10:00','10:50','t1'],[3,'07:50','08:40','t3'],[3,'09:00','09:50','t2'],[4,'07:00','07:50','t1'],[4,'11:00','11:50','t3'],[5,'07:50','08:40','t2']];
+  grade.forEach(g=>h.push({id:uid(),dia:g[0],inicio:g[1],fim:g[2],turmaId:g[3]}));
+  const now=new Date(); const d=now.getDay(); const m=now.getHours()*60+now.getMinutes();
+  if(d>=1&&d<=5&&!h.some(x=>x.dia===d&&m>=minutos(x.inicio)&&m<=minutos(x.fim))){ const ini=new Date(now.getTime()-5*60000), fim=new Date(now.getTime()+45*60000); if(ini.getDate()===fim.getDate()) h.push({id:uid(),dia:d,inicio:hm(ini),fim:hm(fim),turmaId:'t2'}); }
+  return {nome:cfg.nome||'Ana Exemplo',disciplina:cfg.disciplina||'Matemática',turmas:t,horario:h,trimestres:[{inicio:`${y}-02-01`,fim:`${y}-05-15`},{inicio:`${y}-05-16`,fim:`${y}-08-31`},{inicio:`${y}-09-01`,fim:`${y}-12-20`}],nuvem:cfg.nuvem||'demo'};
+}
+
+/* ----- Formulários reutilizados ----- */
+function formPerfil(){ return `<label for="fNome">Seu nome</label><input type="text" id="fNome" value="${esc(cfg.nome)}" autocomplete="name" placeholder="Como aparece no diário"><label for="fDisc">Disciplina</label><input type="text" id="fDisc" value="${esc(cfg.disciplina)}" placeholder="Ex.: Matemática">`; }
+function formTurmas(){
+  return `<div class="list" id="turmasList">${cfg.turmas.map(t=>`<div class="row between card" style="padding:10px 14px"><span style="font-family:var(--display);font-weight:700;font-size:18px">${esc(t.nome)}</span><button class="btn sm danger" data-del-turma="${t.id}">Remover</button></div>`).join('')||'<p class="muted small">Nenhuma turma ainda.</p>'}</div>
+  <div class="row" style="margin-top:10px"><input type="text" id="novaTurma" placeholder="Nome da turma, ex.: 7º B" style="flex:1"><button class="btn primary" id="addTurma">Adicionar</button></div>`;
+}
+function formHorario(){
+  const opts=cfg.turmas.map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join('');
+  const dias=[1,2,3,4,5].map(d=>{ const l=aulasDoDia(d); return `<h3>${DIAS[d]}</h3><div class="sched">${l.map(h=>`<div class="s"><span class="t">${h.inicio}–${h.fim}</span><b>${esc(turmaNome(h.turmaId))}</b><button class="btn sm danger" data-del-aula="${h.id}" aria-label="Remover aula">×</button></div>`).join('')||'<p class="muted small" style="margin:0">Sem aulas.</p>'}</div>`; }).join('');
+  return `<div class="card"><div class="grid2"><div><label for="hDia">Dia</label><select id="hDia">${[1,2,3,4,5].map(d=>`<option value="${d}">${DIAS[d]}</option>`).join('')}</select></div><div><label for="hTurma">Turma</label><select id="hTurma">${opts}</select></div><div><label for="hIni">Início</label><input type="time" id="hIni" value="07:00"></div><div><label for="hFim">Término</label><input type="time" id="hFim" value="07:50"></div></div><button class="btn primary block" id="addAula" style="margin-top:12px">Adicionar aula</button></div>${dias}`;
+}
+function formTrimestres(){
+  return cfg.trimestres.map((t,i)=>`<div class="card" style="margin-top:10px"><div class="eyebrow">${i+1}º Trimestre</div><div class="grid2"><div><label for="tI${i}">Início</label><input type="date" id="tI${i}" data-tri="${i}" data-k="inicio" value="${t.inicio}"></div><div><label for="tF${i}">Término</label><input type="date" id="tF${i}" data-tri="${i}" data-k="fim" value="${t.fim}"></div></div></div>`).join('');
+}
+function formNuvem(){
+  const o=(v,tit,desc)=>`<label class="opt ${cfg.nuvem===v?'on':''}"><input type="radio" name="nuvem" value="${v}" ${cfg.nuvem===v?'checked':''}><span><b>${tit}</b><br><span class="muted small">${desc}</span></span></label>`;
+  return `<div class="stack" style="margin-top:12px">
+    ${o('gdrive','Google Drive','Sua conta Google pessoal. Não depende de autorização da escola.')}
+    ${o('onedrive','OneDrive da escola','Conta Microsoft institucional. Só funciona depois que o TI da escola aprovar o app.')}
+    ${o('demo','Modo demonstração','Nada é enviado. Os registros ficam só neste aparelho, para testar o fluxo.')}
+  </div>
+  <div id="nuvemAcao" style="margin-top:12px">${nuvemAcaoHTML()}</div>`;
+}
+function nuvemAcaoHTML(){
+  if(!cfg.nuvem||cfg.nuvem==='demo') return '';
+  const prov=provedor(); const conta=prov.conta();
+  if(conta) return `<div class="notice ok row between"><span>Conectado: <b>${esc(conta)}</b></span><button class="btn sm" id="descon">Desconectar</button></div>`;
+  const falta = cfg.nuvem==='onedrive'? !msClientId() : !gClientId();
+  const avisoMs = cfg.nuvem==='onedrive'? `<div class="notice">Se aparecer “Precisa de aprovação do administrador”, a escola ainda não liberou o app. Enquanto isso, use o Google Drive.</div>` : '';
+  return `${falta?`<div class="notice warn">Este app ainda não tem o identificador do ${nomeNuvem()} configurado pelo mentor. Você pode informá-lo em Ajustes › Avançado, ou usar o modo demonstração por enquanto.</div>`:''}${avisoMs}<button class="btn primary block" id="conectar" ${falta?'disabled':''} style="margin-top:10px">Conectar ${nomeNuvem()}</button><p class="small muted">Você entra na sua conta e autoriza o app a criar a pasta “${esc(ADMIN.PASTA_RAIZ)}”. O app só enxerga os arquivos que ele mesmo criou. Sua senha nunca passa pelo app.</p>`;
+}
+function ligarForms(){
+  $('#fNome')?.addEventListener('input',e=>cfg.nome=e.target.value);
+  $('#fDisc')?.addEventListener('input',e=>cfg.disciplina=e.target.value);
+  $('#addTurma')?.addEventListener('click',()=>{ const v=$('#novaTurma').value.trim().replace(/[\\/:*?"<>|]/g,'-'); if(!v) return; if(cfg.turmas.some(t=>t.nome.toLowerCase()===v.toLowerCase())) return toast('Essa turma já existe.'); cfg.turmas.push({id:uid(),nome:v}); saveCfg(); rerenderForm(); });
+  $('#novaTurma')?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#addTurma').click(); } });
+  $$('[data-del-turma]').forEach(b=>b.addEventListener('click',()=>{ const id=b.dataset.delTurma; const n=cfg.horario.filter(h=>h.turmaId===id).length; if(!confirm(`Remover a turma ${turmaNome(id)}${n?` e suas ${n} aulas do horário`:''}? Os registros já salvos não são apagados.`)) return; cfg.turmas=cfg.turmas.filter(t=>t.id!==id); cfg.horario=cfg.horario.filter(h=>h.turmaId!==id); saveCfg(); rerenderForm(); }));
+  $('#addAula')?.addEventListener('click',()=>{ const dia=+$('#hDia').value, turmaId=$('#hTurma').value, inicio=$('#hIni').value, fim=$('#hFim').value; if(!turmaId) return toast('Cadastre uma turma antes.'); if(!inicio||!fim||minutos(fim)<=minutos(inicio)) return toast('O término precisa ser depois do início.'); const choque=aulasDoDia(dia).find(h=>minutos(inicio)<minutos(h.fim)&&minutos(fim)>minutos(h.inicio)); if(choque) return toast(`Choque de horário com ${turmaNome(choque.turmaId)} (${choque.inicio}–${choque.fim}).`,3500); cfg.horario.push({id:uid(),dia,inicio,fim,turmaId}); saveCfg(); const keep={dia,turmaId,inicio:fim}; rerenderForm(); if($('#hDia')){ $('#hDia').value=keep.dia; $('#hTurma').value=keep.turmaId; $('#hIni').value=keep.inicio; } });
+  $$('[data-del-aula]').forEach(b=>b.addEventListener('click',()=>{ cfg.horario=cfg.horario.filter(h=>h.id!==b.dataset.delAula); saveCfg(); rerenderForm(); }));
+  $$('[data-tri]').forEach(i=>i.addEventListener('change',e=>{ cfg.trimestres[+e.target.dataset.tri][e.target.dataset.k]=e.target.value; saveCfg(); }));
+  $$('input[name=nuvem]').forEach(r=>r.addEventListener('change',e=>{ cfg.nuvem=e.target.value; saveCfg(); $$('.opt').forEach(o=>o.classList.toggle('on',o.querySelector('input').checked)); $('#nuvemAcao').innerHTML=nuvemAcaoHTML(); ligarNuvem(); renderPill(); }));
+  ligarNuvem();
+}
+function ligarNuvem(){
+  $('#conectar')?.addEventListener('click',async()=>{ const b=$('#conectar'); b.disabled=true; b.textContent='Abrindo login…'; try{ await provedor().conectar(); saveCfg(); $('#nuvemAcao').innerHTML=nuvemAcaoHTML(); ligarNuvem(); renderPill(); toast('Conta conectada'); enviarPendentes(); }catch(e){ toast(e.message,5000); $('#nuvemAcao').innerHTML=nuvemAcaoHTML(); ligarNuvem(); } });
+  $('#descon')?.addEventListener('click',async()=>{ try{ await provedor().desconectar(); }catch(e){} $('#nuvemAcao').innerHTML=nuvemAcaoHTML(); ligarNuvem(); renderPill(); });
+}
+function rerenderForm(){ if(!cfg.setupDone) renderOnboarding(); else render(); }
+
+/* ----- Tela principal: registrar ----- */
+function renderHome(){
+  const now=new Date(); const {aula,motivo}=aulaAgora(now);
+  if(!rascunho.manual){ rascunho.turmaId=aula?aula.turmaId:null; rascunho.horarioId=aula?aula.id:null; }
+  const hoje=aulasDoDia(parseISO(rascunho.data).getDay());
+  const sel=cfg.horario.find(h=>h.id===rascunho.horarioId);
+  const tri=trimestreDe(rascunho.data);
+  const turma=rascunho.turmaId? turmaNome(rascunho.turmaId) : null;
+  const rotulo = rascunho.manual?'Aula escolhida por você':motivo==='agora'?'Aula de agora':motivo==='terminou'?'Aula que acabou de terminar':motivo==='comeca'?'Próxima aula':'Aula';
+  const nowCard = turma? `<div class="now"><div class="eyebrow">${rotulo}</div><div class="turma">${esc(turma)}</div><div class="meta">${DIAS[parseISO(rascunho.data).getDay()]} · ${br(rascunho.data)}${sel?` · ${sel.inicio} às ${sel.fim}`:''} · ${esc(cfg.disciplina)}</div></div>`
+    : `<div class="now none"><div class="eyebrow">${motivo==='semaula'?'Sem aulas cadastradas hoje':'Nenhuma aula neste horário'}</div><p style="margin:6px 0 0">Escolha a turma abaixo para registrar.</p></div>`;
+  view.innerHTML=`
+    <h1 class="sr">Registrar aula</h1>
+    ${nowCard}
+    <div class="row between" style="margin-top:14px"><span class="eyebrow">Aulas de ${rascunho.data===isoHoje()?'hoje':br(rascunho.data)}</span><button class="btn ghost sm" id="outra">Outra turma ou data</button></div>
+    <div class="chips">${hoje.map(h=>`<button class="chip ${h.id===rascunho.horarioId?'on':''}" data-pick="${h.id}">${esc(turmaNome(h.turmaId))}<span class="t">${h.inicio}</span></button>`).join('')||'<span class="muted small">Nenhuma aula cadastrada para este dia.</span>'}</div>
+    <div id="manualBox" ${rascunho.manual||!turma?'':'hidden'} class="card" style="margin-top:8px"><div class="grid2"><div><label for="mTurma">Turma</label><select id="mTurma"><option value="">Escolha…</option>${cfg.turmas.map(t=>`<option value="${t.id}" ${t.id===rascunho.turmaId?'selected':''}>${esc(t.nome)}</option>`).join('')}</select></div><div><label for="mData">Data da aula</label><input type="date" id="mData" value="${rascunho.data}" max="${isoHoje()}"></div></div></div>
+    ${tri? `<div class="path" style="margin-top:12px">${esc(ADMIN.PASTA_RAIZ)} / <b>${esc(turma||'?')}</b> / <b>${tri}</b> / <b>${rascunho.data}</b></div>` : `<div class="notice warn" style="margin-top:12px">A data ${br(rascunho.data)} não está em nenhum trimestre cadastrado. Confira a data da aula ou os trimestres em Ajustes.</div>`}
+    <label for="conteudo">Conteúdo trabalhado <span class="hint">(tópico ou descrição)</span></label>
+    <textarea id="conteudo" placeholder="Ex.: Frações equivalentes — simplificação e comparação. Exercícios 3 a 8 da p. 42.">${esc(rascunho.conteudo)}</textarea>
+    <label>Fotos da lousa ou do livro <span class="hint">(opcional)</span></label>
+    <div class="photos" id="fotos">${rascunho.fotos.map((f,i)=>`<div class="photo"><img src="${f.url}" alt="Foto ${i+1}"><button data-rm="${i}" aria-label="Remover foto ${i+1}">×</button></div>`).join('')}<button class="add-photo" id="addFoto"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Tirar foto</button></div>
+    <div style="margin-top:22px"><button class="btn primary block big" id="salvar">Salvar registro</button><p class="small muted" style="text-align:center;margin-top:8px">${cfg.nuvem==='demo'?'Modo demonstração: nada é enviado para a nuvem.':navigator.onLine?`Vai para o seu ${nomeNuvem()}.`:'Sem internet: fica guardado e envia quando conectar.'}</p></div>`;
+  $('#conteudo').addEventListener('input',e=>rascunho.conteudo=e.target.value);
+  $('#outra').addEventListener('click',()=>{ rascunho.manual=true; $('#manualBox').hidden=false; $('#mTurma').focus(); });
+  $('#mTurma').addEventListener('change',e=>{ rascunho.manual=true; rascunho.turmaId=e.target.value||null; rascunho.horarioId=null; renderHome(); });
+  $('#mData').addEventListener('change',e=>{ if(!e.target.value) return; rascunho.manual=true; rascunho.data=e.target.value; rascunho.horarioId=null; renderHome(); });
+  $$('[data-pick]').forEach(b=>b.addEventListener('click',()=>{ const h=cfg.horario.find(x=>x.id===b.dataset.pick); rascunho.manual=true; rascunho.turmaId=h.turmaId; rascunho.horarioId=h.id; renderHome(); }));
+  $('#addFoto').addEventListener('click',()=>$('#fileIn').click());
+  $$('[data-rm]').forEach(b=>b.addEventListener('click',()=>{ const f=rascunho.fotos.splice(+b.dataset.rm,1)[0]; URL.revokeObjectURL(f.url); renderHome(); }));
+  $('#salvar').addEventListener('click',salvarRegistro);
+}
+$('#fileIn').addEventListener('change',async e=>{
+  const files=[...e.target.files]; e.target.value=''; if(!files.length) return;
+  toast('Preparando foto…',1500);
+  for(const f of files){ try{ const blob=await comprimirFoto(f); rascunho.fotos.push({blob,url:URL.createObjectURL(blob)}); }catch(err){ toast('Não foi possível ler a foto.'); } }
+  renderHome();
+});
+async function salvarRegistro(){
+  const txt=rascunho.conteudo.trim();
+  if(!rascunho.turmaId) return toast('Escolha a turma.');
+  if(!txt&&!rascunho.fotos.length) return toast('Escreva o conteúdo ou tire uma foto.');
+  const tri=trimestreDe(rascunho.data); if(!tri) return toast('A data da aula está fora dos trimestres cadastrados.',3500);
+  const sel=cfg.horario.find(h=>h.id===rascunho.horarioId);
+  const r={id:uid(),turmaId:rascunho.turmaId,turmaNome:turmaNome(rascunho.turmaId),data:rascunho.data,horaInicio:sel?sel.inicio:hm(new Date()),horaFim:sel?sel.fim:'',trimestre:tri,conteudo:txt,fotos:[],status:'pendente',criadoEm:new Date().toISOString()};
+  const base=nomeBase(r); r.fotos=rascunho.fotos.map((f,i)=>({nome:`${base}-foto-${pad(i+1)}.jpg`,blob:f.blob}));
+  await DB.put(r);
+  rascunho.fotos.forEach(f=>URL.revokeObjectURL(f.url)); rascunho=novoRascunho();
+  toast(navigator.onLine?'Registro guardado. Enviando…':'Sem internet. Guardado para enviar depois.');
+  tab='hist'; render(); enviarPendentes();
+}
+
+/* ----- Histórico ----- */
+async function renderHist(){
+  const all=(await DB.all()).sort((a,b)=>(b.data+b.horaInicio).localeCompare(a.data+a.horaInicio)||b.criadoEm.localeCompare(a.criadoEm));
+  const turmas=[...new Set(all.map(r=>r.turmaId))];
+  const ft=renderHist.turma||''; const lista=ft? all.filter(r=>r.turmaId===ft) : all;
+  const pend=all.filter(r=>r.status!=='salvo').length;
+  let html=`<h1>Histórico</h1><div class="row between"><p class="muted small">${all.length} registro${all.length===1?'':'s'}${pend?` · <b style="color:var(--warn)">${pend} aguardando</b>`:''}</p>${pend&&provedor()?`<button class="btn sm" id="reenviar">Enviar pendentes</button>`:''}</div>`;
+  if(turmas.length>1) html+=`<div class="chips"><button class="chip ${!ft?'on':''}" data-ft="">Todas</button>${turmas.map(t=>`<button class="chip ${ft===t?'on':''}" data-ft="${t}">${esc(turmaNome(t))}</button>`).join('')}</div>`;
+  if(!lista.length) html+=`<div class="card" style="margin-top:12px"><p class="muted">Nenhum registro ainda. Na aba Registrar, escreva o conteúdo da aula ou tire uma foto da lousa e toque em Salvar.</p></div>`;
+  let dia=null;
+  for(const r of lista){
+    if(r.data!==dia){ dia=r.data; const d=parseISO(dia); html+=`<div class="daysep">${DIAS_CURTO[d.getDay()]} ${br(dia)}</div>`; }
+    const fotosTxt=r.fotos.length? `${r.fotos.length} foto${r.fotos.length>1?'s':''}` : 'sem foto';
+    html+=`<div class="item"><div class="when"><b>${r.horaInicio.split(':')[0]}</b>${r.horaInicio.split(':')[1]}</div><div>
+      <div class="row between wrap"><span class="title">${esc(r.turmaNome)}</span>${pillStatus(r)}</div>
+      <div class="body">${esc(r.conteudo||'(apenas fotos)')}</div>
+      <div class="small muted" style="margin-top:4px">${r.trimestre} · ${fotosTxt}${r.erro?`<br><span style="color:var(--bad)">${esc(r.erro)}</span>`:''}</div>
+      <div class="actions">
+        ${r.remoto?.link?`<a class="btn sm" href="${esc(r.remoto.link)}" target="_blank" rel="noopener">Abrir pasta</a>`:''}
+        ${r.fotos.some(f=>f.blob)?`<button class="btn sm" data-ver="${r.id}">Ver fotos</button>`:''}
+        ${r.status==='erro'?`<button class="btn sm primary" data-retry="${r.id}">Tentar de novo</button>`:''}
+        ${r.status!=='enviando'?`<button class="btn sm" data-edit="${r.id}">Editar texto</button>`:''}
+        ${r.status!=='enviando'?`<button class="btn sm danger" data-del="${r.id}">Excluir</button>`:''}
+      </div></div></div>`;
+  }
+  view.innerHTML=html;
+  $$('[data-ft]').forEach(b=>b.addEventListener('click',()=>{ renderHist.turma=b.dataset.ft; renderHist(); }));
+  $('#reenviar')?.addEventListener('click',()=>{ toast('Enviando…'); enviarPendentes(); });
+  $$('[data-retry]').forEach(b=>b.addEventListener('click',async()=>{ const r=await DB.get(b.dataset.retry); r.status='pendente'; await DB.put(r); renderHist(); enviarPendentes(); }));
+  $$('[data-del]').forEach(b=>b.addEventListener('click',async()=>{ const r=await DB.get(b.dataset.del); if(!confirm(`Excluir o registro de ${r.turmaNome} em ${br(r.data)} deste aparelho?${r.status==='salvo'&&!r.remoto?.demo?'\n\nOs arquivos já enviados continuam na nuvem.':''}`)) return; await DB.del(r.id); toast('Registro excluído'); renderHist(); atualizarBadge(); }));
+  $$('[data-edit]').forEach(b=>b.addEventListener('click',async()=>{ const r=await DB.get(b.dataset.edit); const v=prompt('Conteúdo trabalhado:',r.conteudo); if(v===null) return; r.conteudo=v.trim(); if(r.status==='salvo'&&!r.remoto?.demo){ r.status='pendente'; } await DB.put(r); renderHist(); enviarPendentes(); }));
+  $$('[data-ver]').forEach(b=>b.addEventListener('click',async()=>{ const r=await DB.get(b.dataset.ver); const html=r.fotos.filter(f=>f.blob).map(f=>`<img src="${URL.createObjectURL(f.blob)}" alt="${esc(f.nome)}" style="width:100%;border-radius:10px;margin-bottom:10px">`).join(''); view.innerHTML=`<button class="btn ghost" id="voltar">‹ Voltar ao histórico</button><h2>${esc(r.turmaNome)} · ${br(r.data)}</h2><p class="muted small">${esc(r.conteudo)}</p>${html}`; $('#voltar').addEventListener('click',renderHist); }));
+}
+
+/* ----- Ajustes ----- */
+function renderCfg(){
+  const prov=provedor(); const conta=prov&&prov.conta();
+  view.innerHTML=`<h1>Ajustes</h1>
+    <details open><summary>Nuvem · ${esc(nomeNuvem())}${conta?' · conectado':''}</summary>${formNuvem()}<div style="height:12px"></div></details>
+    <details style="margin-top:10px"><summary>Você · ${esc(cfg.nome)} · ${esc(cfg.disciplina)}</summary>${formPerfil()}<button class="btn block" id="salvarPerfil" style="margin:12px 0">Salvar</button></details>
+    <details style="margin-top:10px"><summary>Turmas · ${cfg.turmas.length}</summary>${formTurmas()}<div style="height:12px"></div></details>
+    <details style="margin-top:10px"><summary>Horário semanal · ${cfg.horario.length} aulas</summary>${formHorario()}<div style="height:12px"></div></details>
+    <details style="margin-top:10px"><summary>Trimestres</summary>${formTrimestres()}<div style="height:12px"></div></details>
+    <details style="margin-top:10px"><summary>Avançado</summary>
+      <p class="small muted">Identificadores dos aplicativos registrados pelo mentor. Só altere se ele pedir.</p>
+      <label for="msId">ID do aplicativo Microsoft</label><input type="text" id="msId" value="${esc(cfg.msClientId)}" placeholder="${esc(ADMIN.MICROSOFT_CLIENT_ID||'não configurado')}">
+      <label for="gId">ID do cliente Google</label><input type="text" id="gId" value="${esc(cfg.gClientId)}" placeholder="${esc(ADMIN.GOOGLE_CLIENT_ID||'não configurado')}">
+      <button class="btn block" id="salvarIds" style="margin:12px 0">Salvar identificadores</button>
+      <hr style="border:0;border-top:1px solid var(--line)">
+      <p class="small muted">Este aparelho: ${location.protocol==='https:'||location.hostname==='localhost'?'conexão segura':'sem HTTPS (login na nuvem não funciona)'} · ${window.matchMedia('(display-mode: standalone)').matches?'instalado como app':'aberto no navegador'}</p>
+      <button class="btn block danger" id="reset" style="margin:6px 0 12px">Apagar todos os dados deste aparelho</button>
+    </details>
+    <p class="small muted" style="margin-top:20px">Registro Fácil · versão 1.0 · Seus registros ficam na sua conta; o app não guarda cópias em servidores próprios.</p>`;
+  ligarForms();
+  $('#salvarPerfil').addEventListener('click',()=>{ saveCfg(); toast('Salvo'); renderCfg(); });
+  $('#salvarIds').addEventListener('click',()=>{ cfg.msClientId=$('#msId').value.trim(); cfg.gClientId=$('#gId').value.trim(); saveCfg(); OneDrive.msal=null; GDrive.client=null; toast('Identificadores salvos'); renderCfg(); });
+  $('#reset').addEventListener('click',async()=>{ if(!confirm('Apagar cadastro, horário e registros pendentes deste aparelho? Os arquivos já salvos na nuvem não são afetados.')) return; await DB.clear(); localStorage.clear(); cfg=DEFAULT_CFG(); obStep=0; tab='home'; render(); });
+}
+
+/* ---------- Inicialização ---------- */
+(async function init(){
+  if(cfg.nuvem==='onedrive'&&msClientId()){ try{ await OneDrive.init(); }catch(e){ console.warn(e); } }
+  render();
+  if(cfg.setupDone) enviarPendentes();
+  setInterval(()=>{ if(cfg.setupDone&&tab==='home'&&!rascunho.manual&&!rascunho.conteudo&&!rascunho.fotos.length){ const {aula}=aulaAgora(); if((aula?aula.id:null)!==rascunho.horarioId) renderHome(); } },60000);
+  if('serviceWorker' in navigator && location.protocol==='https:' && !/claude|anthropic/.test(location.hostname)){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+})();
+</script>
