@@ -114,6 +114,7 @@ input[type=date],input[type=time]{font-family:var(--mono);font-size:15px}
 .list{display:flex;flex-direction:column;gap:8px}
 .item{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
 .item .when{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:center;line-height:1.3;min-width:52px}
+.selbox{width:24px;height:24px;accent-color:var(--accent);cursor:pointer;display:block;margin:2px auto}
 .item .when b{display:block;font-size:20px;color:var(--ink);font-weight:600}
 .item .title{font-family:var(--display);font-weight:700;font-size:17px}
 .item .body{color:var(--muted);font-size:14px;margin-top:2px;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -395,6 +396,29 @@ const nomeNuvem = ()=>({onedrive:'OneDrive da escola',gdrive:'Google Drive',demo
 
 /* ---------- Fila de envio ---------- */
 let enviando=false;
+const cancelados=new Set();   // registros excluídos enquanto estavam sendo enviados
+const LIMITE_ENVIO=120000;    // 2 minutos por registro: evita travar a fila para sempre
+
+// Um registro marcado como "enviando" por uma sessão que foi fechada no meio do upload
+// ficava preso: a fila não o reenviava e a tela não deixava excluí-lo. Aqui ele volta
+// para a fila assim que o app abre.
+async function recuperarTravados(){
+  const travados=(await DB.all()).filter(r=>r.status==='enviando');
+  for(const r of travados){ r.status='pendente'; r.etapa=null; await DB.put(r); }
+  return travados.length;
+}
+
+function comLimite(promessa,ms,msg){
+  let id; const limite=new Promise((_,rej)=>{ id=setTimeout(()=>rej(new Error(msg)),ms); });
+  return Promise.race([promessa,limite]).finally(()=>clearTimeout(id));
+}
+
+// Nunca recria no banco um registro que o professor excluiu durante o envio.
+async function guardar(r){
+  if(cancelados.has(r.id)){ cancelados.delete(r.id); try{ await DB.del(r.id); }catch(e){} return false; }
+  await DB.put(r); return true;
+}
+
 async function enviarPendentes(){
   if(enviando) return; const prov=provedor(); if(!prov) return;
   enviando=true;
@@ -402,14 +426,17 @@ async function enviarPendentes(){
     const todos=(await DB.all()).filter(r=>r.status==='pendente'||r.status==='erro');
     for(const r of todos){
       if(!navigator.onLine){ break; }
-      r.status='enviando'; r.etapa='Preparando…'; r.erro=null; await DB.put(r); refreshStatus(r.id);
+      if(cancelados.has(r.id)){ cancelados.delete(r.id); continue; }
+      r.status='enviando'; r.etapa='Preparando…'; r.erro=null;
+      if(!await guardar(r)) continue;
+      refreshStatus(r.id);
       try{
-        const res=await prov.enviar(r,e=>{ r.etapa=e; refreshStatus(r.id); });
+        const res=await comLimite(prov.enviar(r,e=>{ r.etapa=e; refreshStatus(r.id); }),LIMITE_ENVIO,'O envio demorou demais e foi interrompido. Toque em Tentar de novo.');
         r.status='salvo'; r.remoto=res; r.salvoEm=new Date().toISOString(); r.etapa=null;
         if(!res.demo) r.fotos=r.fotos.map(f=>({nome:f.nome,blob:null}));
-        await DB.put(r); toast((res.demo?'Guardado (demonstração): ':'Salvo na nuvem: ')+r.turmaNome);
+        if(await guardar(r)) toast((res.demo?'Guardado (demonstração): ':'Salvo na nuvem: ')+r.turmaNome);
       }catch(e){
-        r.status='erro'; r.erro=e.message; r.etapa=null; await DB.put(r);
+        r.status='erro'; r.erro=e.message; r.etapa=null; await guardar(r);
         if(/Redirecionando/.test(e.message)) break;
       }
       refreshStatus(r.id);
@@ -421,6 +448,7 @@ window.addEventListener('offline',renderPill);
 
 /* ---------- UI ---------- */
 let tab='home', obStep=0, rascunho=novoRascunho();
+let selMode=false; const selIds=new Set();   // seleção múltipla no histórico
 const view=$('#view');
 function novoRascunho(){ const {aula}=aulaAgora(); return {turmaId:aula?aula.turmaId:null, horarioId:aula?aula.id:null, data:isoHoje(), conteudo:'', fotos:[], manual:false}; }
 function toast(msg,ms=2600){ $$('.toast').forEach(t=>t.remove()); const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),ms); }
@@ -592,30 +620,68 @@ async function renderHist(){
   const turmas=[...new Set(all.map(r=>r.turmaId))];
   const ft=renderHist.turma||''; const lista=ft? all.filter(r=>r.turmaId===ft) : all;
   const pend=all.filter(r=>r.status!=='salvo').length;
-  let html=`<h1>Histórico</h1><div class="row between"><p class="muted small">${all.length} registro${all.length===1?'':'s'}${pend?` · <b style="color:var(--warn)">${pend} aguardando</b>`:''}</p>${pend&&provedor()?`<button class="btn sm" id="reenviar">Enviar pendentes</button>`:''}</div>`;
+  let html=`<h1>Histórico</h1>`;
+  if(selMode){
+    html+=`<div class="card" style="padding:12px 14px">
+      <div class="row between wrap"><b id="selCount">${selIds.size} selecionado${selIds.size===1?'':'s'}</b>
+      <div class="row wrap" style="gap:6px"><button class="btn sm" id="selTodos">Todos</button>${pend?`<button class="btn sm" id="selFalhou">Não enviados</button>`:''}<button class="btn sm" id="selSair">Cancelar</button></div></div>
+      <button class="btn danger block" id="selExcluir" ${selIds.size?'':'disabled'} style="margin-top:10px">Excluir selecionados</button></div>`;
+  } else {
+    html+=`<div class="row between wrap" style="gap:8px"><p class="muted small" style="margin:0">${all.length} registro${all.length===1?'':'s'}${pend?` · <b style="color:var(--warn)">${pend} aguardando</b>`:''}</p>
+      <div class="row wrap" style="gap:6px">${pend&&provedor()?`<button class="btn sm" id="reenviar">Enviar pendentes</button>`:''}${all.length?`<button class="btn sm" id="selEntrar">Selecionar</button>`:''}</div></div>`;
+  }
   if(turmas.length>1) html+=`<div class="chips"><button class="chip ${!ft?'on':''}" data-ft="">Todas</button>${turmas.map(t=>`<button class="chip ${ft===t?'on':''}" data-ft="${t}">${esc(turmaNome(t))}</button>`).join('')}</div>`;
   if(!lista.length) html+=`<div class="card" style="margin-top:12px"><p class="muted">Nenhum registro ainda. Na aba Registrar, escreva o conteúdo da aula ou tire uma foto da lousa e toque em Salvar.</p></div>`;
   let dia=null;
   for(const r of lista){
     if(r.data!==dia){ dia=r.data; const d=parseISO(dia); html+=`<div class="daysep">${DIAS_CURTO[d.getDay()]} ${br(dia)}</div>`; }
     const fotosTxt=r.fotos.length? `${r.fotos.length} foto${r.fotos.length>1?'s':''}` : 'sem foto';
-    html+=`<div class="item"><div class="when"><b>${r.horaInicio.split(':')[0]}</b>${r.horaInicio.split(':')[1]}</div><div>
+    const canto=selMode
+      ? `<div class="when"><input type="checkbox" class="selbox" data-sel="${r.id}" ${selIds.has(r.id)?'checked':''} aria-label="Selecionar registro de ${esc(r.turmaNome)} em ${br(r.data)}"></div>`
+      : `<div class="when"><b>${r.horaInicio.split(':')[0]}</b>${r.horaInicio.split(':')[1]}</div>`;
+    html+=`<div class="item">${canto}<div>
       <div class="row between wrap"><span class="title">${esc(r.turmaNome)}</span>${pillStatus(r)}</div>
       <div class="body">${esc(r.conteudo||'(apenas fotos)')}</div>
       <div class="small muted" style="margin-top:4px">${r.trimestre} · ${fotosTxt}${r.erro?`<br><span style="color:var(--bad)">${esc(r.erro)}</span>`:''}</div>
-      <div class="actions">
+      ${selMode?'':`<div class="actions">
         ${r.remoto?.link?`<a class="btn sm" href="${esc(r.remoto.link)}" target="_blank" rel="noopener">Abrir pasta</a>`:''}
         ${r.fotos.some(f=>f.blob)?`<button class="btn sm" data-ver="${r.id}">Ver fotos</button>`:''}
         ${r.status==='erro'?`<button class="btn sm primary" data-retry="${r.id}">Tentar de novo</button>`:''}
-        ${r.status!=='enviando'?`<button class="btn sm" data-edit="${r.id}">Editar texto</button>`:''}
-        ${r.status!=='enviando'?`<button class="btn sm danger" data-del="${r.id}">Excluir</button>`:''}
-      </div></div></div>`;
+        <button class="btn sm" data-edit="${r.id}">Editar texto</button>
+        <button class="btn sm danger" data-del="${r.id}">Excluir</button>
+      </div>`}</div></div>`;
   }
   view.innerHTML=html;
   $$('[data-ft]').forEach(b=>b.addEventListener('click',()=>{ renderHist.turma=b.dataset.ft; renderHist(); }));
   $('#reenviar')?.addEventListener('click',()=>{ toast('Enviando…'); enviarPendentes(); });
+  $('#selEntrar')?.addEventListener('click',()=>{ selMode=true; selIds.clear(); renderHist(); });
+  $('#selSair')?.addEventListener('click',()=>{ selMode=false; selIds.clear(); renderHist(); });
+  $('#selTodos')?.addEventListener('click',()=>{ lista.forEach(r=>selIds.add(r.id)); renderHist(); });
+  $('#selFalhou')?.addEventListener('click',()=>{ selIds.clear(); lista.filter(r=>r.status!=='salvo').forEach(r=>selIds.add(r.id)); renderHist(); });
+  $$('[data-sel]').forEach(c=>c.addEventListener('change',()=>{
+    c.checked? selIds.add(c.dataset.sel) : selIds.delete(c.dataset.sel);
+    const n=selIds.size;
+    const cnt=$('#selCount'); if(cnt) cnt.textContent=`${n} selecionado${n===1?'':'s'}`;
+    const bx=$('#selExcluir'); if(bx) bx.disabled=!n;
+  }));
+  $('#selExcluir')?.addEventListener('click',async()=>{
+    const n=selIds.size; if(!n) return;
+    const naNuvem=lista.filter(r=>selIds.has(r.id)&&r.status==='salvo'&&!r.remoto?.demo).length;
+    const aviso=naNuvem? `\n\n${naNuvem===1?'1 já foi enviado e o arquivo continua':`${naNuvem} já foram enviados e os arquivos continuam`} na nuvem.` : '';
+    if(!confirm(`Excluir ${n} registro${n===1?'':'s'} deste aparelho?${aviso}`)) return;
+    for(const id of selIds){ cancelados.add(id); try{ await DB.del(id); }catch(e){} }
+    selIds.clear(); selMode=false;
+    toast(`${n} registro${n===1?'':'s'} excluído${n===1?'':'s'}`); renderHist(); atualizarBadge();
+  });
   $$('[data-retry]').forEach(b=>b.addEventListener('click',async()=>{ const r=await DB.get(b.dataset.retry); r.status='pendente'; await DB.put(r); renderHist(); enviarPendentes(); }));
-  $$('[data-del]').forEach(b=>b.addEventListener('click',async()=>{ const r=await DB.get(b.dataset.del); if(!confirm(`Excluir o registro de ${r.turmaNome} em ${br(r.data)} deste aparelho?${r.status==='salvo'&&!r.remoto?.demo?'\n\nOs arquivos já enviados continuam na nuvem.':''}`)) return; await DB.del(r.id); toast('Registro excluído'); renderHist(); atualizarBadge(); }));
+  $$('[data-del]').forEach(b=>b.addEventListener('click',async()=>{
+    const r=await DB.get(b.dataset.del); if(!r) return;
+    const aviso = r.status==='enviando' ? '\n\nEle está sendo enviado agora. O envio será cancelado.'
+      : (r.status==='salvo'&&!r.remoto?.demo ? '\n\nOs arquivos já enviados continuam na nuvem.' : '');
+    if(!confirm(`Excluir o registro de ${r.turmaNome} em ${br(r.data)} deste aparelho?${aviso}`)) return;
+    cancelados.add(r.id); await DB.del(r.id);
+    toast('Registro excluído'); renderHist(); atualizarBadge();
+  }));
   $$('[data-edit]').forEach(b=>b.addEventListener('click',async()=>{ const r=await DB.get(b.dataset.edit); const v=prompt('Conteúdo trabalhado:',r.conteudo); if(v===null) return; r.conteudo=v.trim(); if(r.status==='salvo'&&!r.remoto?.demo){ r.status='pendente'; } await DB.put(r); renderHist(); enviarPendentes(); }));
   $$('[data-ver]').forEach(b=>b.addEventListener('click',async()=>{ const r=await DB.get(b.dataset.ver); const html=r.fotos.filter(f=>f.blob).map(f=>`<img src="${URL.createObjectURL(f.blob)}" alt="${esc(f.nome)}" style="width:100%;border-radius:10px;margin-bottom:10px">`).join(''); view.innerHTML=`<button class="btn ghost" id="voltar">‹ Voltar ao histórico</button><h2>${esc(r.turmaNome)} · ${br(r.data)}</h2><p class="muted small">${esc(r.conteudo)}</p>${html}`; $('#voltar').addEventListener('click',renderHist); }));
 }
@@ -649,7 +715,11 @@ function renderCfg(){
 (async function init(){
   if(cfg.nuvem==='onedrive'&&msClientId()){ try{ await OneDrive.init(); }catch(e){ console.warn(e); } }
   render();
-  if(cfg.setupDone) enviarPendentes();
+  if(cfg.setupDone){
+    const n=await recuperarTravados();
+    if(n){ toast(n===1?'1 registro preso foi liberado para envio.':`${n} registros presos foram liberados para envio.`,4500); if(tab==='hist') render(); }
+    enviarPendentes();
+  }
   setInterval(()=>{ if(cfg.setupDone&&tab==='home'&&!rascunho.manual&&!rascunho.conteudo&&!rascunho.fotos.length){ const {aula}=aulaAgora(); if((aula?aula.id:null)!==rascunho.horarioId) renderHome(); } },60000);
   if('serviceWorker' in navigator && location.protocol==='https:' && !/claude|anthropic/.test(location.hostname)){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 })();
