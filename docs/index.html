@@ -204,20 +204,35 @@ const turmaNome = id=>(cfg.turmas.find(t=>t.id===id)||{}).nome||'—';
 const DB = {
   _db:null,
   open(){ return this._db? Promise.resolve(this._db) : new Promise((res,rej)=>{
-    const r=indexedDB.open('registro_facil',1);
-    r.onupgradeneeded=()=>{ const s=r.result.createObjectStore('registros',{keyPath:'id'}); s.createIndex('data','data'); };
+    const r=indexedDB.open('registro_facil',2);
+    r.onupgradeneeded=()=>{ const db=r.result;
+      if(!db.objectStoreNames.contains('registros')){ const s=db.createObjectStore('registros',{keyPath:'id'}); s.createIndex('data','data'); }
+      if(!db.objectStoreNames.contains('agenda')){ const a=db.createObjectStore('agenda',{keyPath:'id'}); a.createIndex('data','data'); }
+    };
     r.onsuccess=()=>{ this._db=r.result; res(this._db); }; r.onerror=()=>rej(r.error);
   });},
-  async tx(mode,fn){ const db=await this.open(); return new Promise((res,rej)=>{ const t=db.transaction('registros',mode); const st=t.objectStore('registros'); const q=fn(st); t.oncomplete=()=>res(q&&q.result); t.onerror=()=>rej(t.error); }); },
-  put(r){ return this.tx('readwrite',s=>s.put(r)); },
-  get(id){ return this.tx('readonly',s=>s.get(id)); },
-  del(id){ return this.tx('readwrite',s=>s.delete(id)); },
-  all(){ return this.tx('readonly',s=>s.getAll()); },
-  clear(){ return this.tx('readwrite',s=>s.clear()); }
+  async tx(mode,fn,loja='registros'){ const db=await this.open(); return new Promise((res,rej)=>{ const t=db.transaction(loja,mode); const st=t.objectStore(loja); const q=fn(st); t.oncomplete=()=>res(q&&q.result); t.onerror=()=>rej(t.error); }); },
+  put(r,loja){ return this.tx('readwrite',s=>s.put(r),loja); },
+  get(id,loja){ return this.tx('readonly',s=>s.get(id),loja); },
+  del(id,loja){ return this.tx('readwrite',s=>s.delete(id),loja); },
+  all(loja){ return this.tx('readonly',s=>s.getAll(),loja); },
+  clear(loja){ return this.tx('readwrite',s=>s.clear(),loja); }
 };
 
 /* ---------- Regras: aula atual e trimestre ---------- */
 function aulasDoDia(dia){ return cfg.horario.filter(h=>h.dia===dia).sort((a,b)=>minutos(a.inicio)-minutos(b.inicio)); }
+// Próxima data, depois de "apartirDe", em que a turma tem aula no horário semanal.
+function proximaAulaDaTurma(turmaId, apartirDe){
+  if(!turmaId) return '';
+  const dias=new Set(cfg.horario.filter(h=>h.turmaId===turmaId).map(h=>h.dia));
+  if(!dias.size) return '';
+  const base=parseISO(apartirDe||isoHoje());
+  for(let i=1;i<=28;i++){
+    const d=new Date(base.getFullYear(),base.getMonth(),base.getDate()+i);
+    if(dias.has(d.getDay())) return isoHoje(d);
+  }
+  return '';
+}
 function aulaAgora(now=new Date()){
   const lista=aulasDoDia(now.getDay()); const m=now.getHours()*60+now.getMinutes();
   let hit=lista.find(h=>m>=minutos(h.inicio)&&m<=minutos(h.fim)); if(hit) return {aula:hit,motivo:'agora'};
@@ -449,6 +464,7 @@ window.addEventListener('offline',renderPill);
 /* ---------- UI ---------- */
 let tab='home', obStep=0, rascunho=novoRascunho();
 let selMode=false; const selIds=new Set();   // seleção múltipla no histórico
+let agDraft={texto:'',data:''};              // rascunho do agendamento, sobrevive ao redesenho da tela
 const view=$('#view');
 function novoRascunho(){ const {aula}=aulaAgora(); return {turmaId:aula?aula.turmaId:null, horarioId:aula?aula.id:null, data:isoHoje(), conteudo:'', fotos:[], manual:false}; }
 function toast(msg,ms=2600){ $$('.toast').forEach(t=>t.remove()); const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),ms); }
@@ -582,17 +598,65 @@ function renderHome(){
     ${tri? `<div class="path" style="margin-top:12px">${esc(ADMIN.PASTA_RAIZ)} / <b>${esc(turma||'?')}</b> / <b>${tri}</b> / <b>${rascunho.data}</b></div>` : `<div class="notice warn" style="margin-top:12px">A data ${br(rascunho.data)} não está em nenhum trimestre cadastrado. Confira a data da aula ou os trimestres em Ajustes.</div>`}
     <label for="conteudo">Conteúdo trabalhado <span class="hint">(tópico ou descrição)</span></label>
     <textarea id="conteudo" placeholder="Ex.: Frações equivalentes — simplificação e comparação. Exercícios 3 a 8 da p. 42.">${esc(rascunho.conteudo)}</textarea>
+    <label for="agTexto">Agendar para uma aula futura <span class="hint">(opcional)</span></label>
+    <div class="card">
+      <textarea id="agTexto" style="min-height:76px" placeholder="Ex.: Aplicar a prova de frações. Levar as folhas impressas.">${esc(agDraft.texto)}</textarea>
+      <label for="agData">Para quando</label>
+      <input type="date" id="agData" min="${isoHoje()}" value="${agDraft.data||proximaAulaDaTurma(rascunho.turmaId,rascunho.data)}">
+      <button class="btn primary block" id="agAdd" style="margin-top:12px" ${turma?'':'disabled'}>Agendar</button>
+      ${turma?'':`<p class="small muted" style="margin:8px 0 0">Escolha a turma acima para poder agendar.</p>`}
+    </div>
+    <label>Agendado para ${turma? esc(turma) : 'esta turma'}</label>
+    <div id="agLista"><p class="muted small">Carregando…</p></div>
     <label>Fotos da lousa ou do livro <span class="hint">(opcional)</span></label>
     <div class="photos" id="fotos">${rascunho.fotos.map((f,i)=>`<div class="photo"><img src="${f.url}" alt="Foto ${i+1}"><button data-rm="${i}" aria-label="Remover foto ${i+1}">×</button></div>`).join('')}<button class="add-photo" id="addFoto"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Tirar foto</button></div>
     <div style="margin-top:22px"><button class="btn primary block big" id="salvar">Salvar registro</button><p class="small muted" style="text-align:center;margin-top:8px">${cfg.nuvem==='demo'?'Modo demonstração: nada é enviado para a nuvem.':navigator.onLine?`Vai para o seu ${nomeNuvem()}.`:'Sem internet: fica guardado e envia quando conectar.'}</p></div>`;
   $('#conteudo').addEventListener('input',e=>rascunho.conteudo=e.target.value);
   $('#outra').addEventListener('click',()=>{ rascunho.manual=true; $('#manualBox').hidden=false; $('#mTurma').focus(); });
-  $('#mTurma').addEventListener('change',e=>{ rascunho.manual=true; rascunho.turmaId=e.target.value||null; rascunho.horarioId=null; renderHome(); });
-  $('#mData').addEventListener('change',e=>{ if(!e.target.value) return; rascunho.manual=true; rascunho.data=e.target.value; rascunho.horarioId=null; renderHome(); });
-  $$('[data-pick]').forEach(b=>b.addEventListener('click',()=>{ const h=cfg.horario.find(x=>x.id===b.dataset.pick); rascunho.manual=true; rascunho.turmaId=h.turmaId; rascunho.horarioId=h.id; renderHome(); }));
+  $('#mTurma').addEventListener('change',e=>{ rascunho.manual=true; rascunho.turmaId=e.target.value||null; rascunho.horarioId=null; agDraft.data=''; renderHome(); });
+  $('#mData').addEventListener('change',e=>{ if(!e.target.value) return; rascunho.manual=true; rascunho.data=e.target.value; rascunho.horarioId=null; agDraft.data=''; renderHome(); });
+  $$('[data-pick]').forEach(b=>b.addEventListener('click',()=>{ const h=cfg.horario.find(x=>x.id===b.dataset.pick); rascunho.manual=true; rascunho.turmaId=h.turmaId; rascunho.horarioId=h.id; agDraft.data=''; renderHome(); }));
   $('#addFoto').addEventListener('click',()=>$('#fileIn').click());
   $$('[data-rm]').forEach(b=>b.addEventListener('click',()=>{ const f=rascunho.fotos.splice(+b.dataset.rm,1)[0]; URL.revokeObjectURL(f.url); renderHome(); }));
+  $('#agTexto').addEventListener('input',e=>agDraft.texto=e.target.value);
+  $('#agData').addEventListener('change',e=>agDraft.data=e.target.value);
+  $('#agAdd')?.addEventListener('click',async()=>{
+    const texto=$('#agTexto').value.trim(), data=$('#agData').value;
+    if(!rascunho.turmaId) return toast('Escolha a turma primeiro.');
+    if(!texto) return toast('Escreva o que ficará agendado.');
+    if(!data) return toast('Escolha para quando é.');
+    await DB.put({id:uid(),turmaId:rascunho.turmaId,turmaNome:turmaNome(rascunho.turmaId),data,texto,criadoEm:new Date().toISOString()},'agenda');
+    agDraft={texto:'',data:''};
+    $('#agTexto').value=''; $('#agData').value=proximaAulaDaTurma(rascunho.turmaId,rascunho.data);
+    toast('Agendado para '+br(data));
+    pintarAgenda();
+  });
   $('#salvar').addEventListener('click',salvarRegistro);
+  pintarAgenda();
+}
+
+// Lista o que está agendado para a turma selecionada. Fica separada de renderHome
+// porque lê do banco (assíncrono) e a tela é desenhada de imediato.
+async function pintarAgenda(){
+  const box=$('#agLista'); if(!box) return;
+  if(!rascunho.turmaId){ box.innerHTML='<p class="muted small">Escolha a turma para ver o que está agendado.</p>'; return; }
+  const itens=(await DB.all('agenda')).filter(a=>a.turmaId===rascunho.turmaId).sort((a,b)=>a.data.localeCompare(b.data));
+  if(!$('#agLista')) return;                       // a tela mudou enquanto carregava
+  if(!itens.length){ box.innerHTML='<p class="muted small">Nada agendado para esta turma.</p>'; return; }
+  const hj=isoHoje();
+  box.innerHTML=`<div class="list">${itens.map(a=>{
+    const venceu=a.data<=hj;
+    const rotulo=a.data===hj?'É hoje':(a.data<hj?'Atrasado':`${DIAS_CURTO[parseISO(a.data).getDay()]} · ${br(a.data)}`);
+    return `<div class="item"${venceu?' style="border-color:var(--warn)"':''}>
+      <div class="when"><b>${a.data.slice(8,10)}</b>${a.data.slice(5,7)}</div><div>
+      <div class="small" style="${venceu?'color:var(--warn);font-weight:700':'color:var(--muted)'}">${rotulo}</div>
+      <div class="body" style="color:var(--ink)">${esc(a.texto)}</div>
+      <div class="actions"><button class="btn sm" data-ag-ok="${a.id}">Concluir</button></div>
+    </div></div>`;
+  }).join('')}</div>`;
+  $$('[data-ag-ok]').forEach(b=>b.addEventListener('click',async()=>{
+    await DB.del(b.dataset.agOk,'agenda'); toast('Agendamento concluído'); pintarAgenda();
+  }));
 }
 $('#fileIn').addEventListener('change',async e=>{
   const files=[...e.target.files]; e.target.value=''; if(!files.length) return;
@@ -708,7 +772,7 @@ function renderCfg(){
   ligarForms();
   $('#salvarPerfil').addEventListener('click',()=>{ saveCfg(); toast('Salvo'); renderCfg(); });
   $('#salvarIds').addEventListener('click',()=>{ cfg.msClientId=$('#msId').value.trim(); cfg.gClientId=$('#gId').value.trim(); saveCfg(); OneDrive.msal=null; GDrive.client=null; toast('Identificadores salvos'); renderCfg(); });
-  $('#reset').addEventListener('click',async()=>{ if(!confirm('Apagar cadastro, horário e registros pendentes deste aparelho? Os arquivos já salvos na nuvem não são afetados.')) return; await DB.clear(); localStorage.clear(); cfg=DEFAULT_CFG(); obStep=0; tab='home'; render(); });
+  $('#reset').addEventListener('click',async()=>{ if(!confirm('Apagar cadastro, horário, agendamentos e registros pendentes deste aparelho? Os arquivos já salvos na nuvem não são afetados.')) return; await DB.clear(); await DB.clear('agenda'); localStorage.clear(); cfg=DEFAULT_CFG(); obStep=0; tab='home'; render(); });
 }
 
 /* ---------- Inicialização ---------- */
