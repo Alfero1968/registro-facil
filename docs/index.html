@@ -106,7 +106,7 @@ input[type=date],input[type=time]{font-family:var(--mono);font-size:15px}
 .photo img{width:100%;height:100%;object-fit:cover;display:block}
 .photo button{position:absolute;top:4px;right:4px;border:0;background:rgba(26,35,32,.75);color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px;line-height:1}
 .add-photo{aspect-ratio:1;border:2px dashed var(--line);border-radius:10px;background:transparent;color:var(--accent);font:inherit;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:14px}
-.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--surface);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:5}
+.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:5}
 .tabs button{position:relative;font:inherit;font-size:12px;font-weight:700;border:0;background:transparent;color:var(--muted);padding:8px 4px;border-radius:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
 .tabs button svg{width:22px;height:22px}
 .tabs button.on{color:var(--accent);background:var(--accent-soft)}
@@ -155,6 +155,7 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:8px}
   <nav class="tabs" id="tabs" hidden>
     <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16v11H4z"/><path d="M8 11h8M8 14h5"/></svg>Registrar</button>
     <button data-tab="hist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h5l2 2h11v11H3z"/></svg>Histórico<span class="badge" id="pendBadge" hidden></span></button>
+    <button data-tab="ag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Agenda<span class="badge" id="agBadge" hidden></span></button>
     <button data-tab="cfg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>Ajustes</button>
   </nav>
 </div>
@@ -204,10 +205,11 @@ const turmaNome = id=>(cfg.turmas.find(t=>t.id===id)||{}).nome||'—';
 const DB = {
   _db:null,
   open(){ return this._db? Promise.resolve(this._db) : new Promise((res,rej)=>{
-    const r=indexedDB.open('registro_facil',2);
+    const r=indexedDB.open('registro_facil',3);
     r.onupgradeneeded=()=>{ const db=r.result;
       if(!db.objectStoreNames.contains('registros')){ const s=db.createObjectStore('registros',{keyPath:'id'}); s.createIndex('data','data'); }
       if(!db.objectStoreNames.contains('agenda')){ const a=db.createObjectStore('agenda',{keyPath:'id'}); a.createIndex('data','data'); }
+      if(!db.objectStoreNames.contains('eventos')){ const e=db.createObjectStore('eventos',{keyPath:'id'}); e.createIndex('data','data'); }
     };
     r.onsuccess=()=>{ this._db=r.result; res(this._db); }; r.onerror=()=>rej(r.error);
   });},
@@ -483,10 +485,10 @@ function pillStatus(r){
 }
 
 function render(){
-  renderPill(); atualizarBadge();
+  renderPill(); atualizarBadge(); atualizarBadgeAgenda();
   if(!cfg.setupDone){ $('#tabs').hidden=true; renderOnboarding(); return; }
   $('#tabs').hidden=false; $$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
-  ({home:renderHome,hist:renderHist,cfg:renderCfg})[tab]();
+  ({home:renderHome,hist:renderHist,ag:renderAgendaTab,cfg:renderCfg})[tab]();
   window.scrollTo(0,0);
 }
 $('#tabs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; tab=b.dataset.tab; render(); });
@@ -750,6 +752,132 @@ async function renderHist(){
   $$('[data-ver]').forEach(b=>b.addEventListener('click',async()=>{ const r=await DB.get(b.dataset.ver); const html=r.fotos.filter(f=>f.blob).map(f=>`<img src="${URL.createObjectURL(f.blob)}" alt="${esc(f.nome)}" style="width:100%;border-radius:10px;margin-bottom:10px">`).join(''); view.innerHTML=`<button class="btn ghost" id="voltar">‹ Voltar ao histórico</button><h2>${esc(r.turmaNome)} · ${br(r.data)}</h2><p class="muted small">${esc(r.conteudo)}</p>${html}`; $('#voltar').addEventListener('click',renderHist); }));
 }
 
+/* ----- Agenda do ano letivo ----- */
+const LEMBRETES=[[0,'Na hora'],[30,'30 minutos antes'],[60,'1 hora antes'],[120,'2 horas antes'],[180,'3 horas antes'],[1440,'1 dia antes'],[2880,'2 dias antes'],[10080,'1 semana antes']];
+const rotuloLembrete=m=>(LEMBRETES.find(l=>l[0]===m)||[0,'Na hora'])[1];
+let evDraft={titulo:'',data:'',hora:'07:00',lembrete:1440,turmaId:''};
+
+// Duração no formato do calendário: -P1D (1 dia antes), -PT2H (2 horas antes)…
+function gatilho(min){
+  if(min<=0) return 'PT0M';
+  if(min%10080===0) return '-P'+(min/10080)+'W';
+  if(min%1440===0) return '-P'+(min/1440)+'D';
+  if(min%60===0) return '-PT'+(min/60)+'H';
+  return '-PT'+min+'M';
+}
+function instantes(ev){
+  const [y,m,d]=ev.data.split('-'); const [hh,mm]=(ev.hora||'07:00').split(':');
+  const f=n=>String(n).padStart(2,'0');
+  const fim=new Date(+y,+m-1,+d,+hh+1,+mm);
+  return {ini:`${y}${m}${d}T${hh}${mm}00`, fim:`${fim.getFullYear()}${f(fim.getMonth()+1)}${f(fim.getDate())}T${f(fim.getHours())}${f(fim.getMinutes())}00`};
+}
+// Arquivo de calendário com o alarme já embutido. Quem avisa o professor é o
+// próprio celular, por isso não é preciso servidor nem e-mail.
+function icsDe(ev){
+  const e=s=>String(s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
+  const {ini,fim}=instantes(ev);
+  const agora=new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+  const det=ev.turmaId? `Turma: ${turmaNome(ev.turmaId)} · Registro Fácil` : 'Registro Fácil';
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Registro Facil//PT-BR','CALSCALE:GREGORIAN','METHOD:PUBLISH',
+    'BEGIN:VEVENT',`UID:${ev.id}@registrofacil`,`DTSTAMP:${agora}`,`DTSTART:${ini}`,`DTEND:${fim}`,
+    `SUMMARY:${e(ev.titulo)}`,`DESCRIPTION:${e(det)}`,
+    'BEGIN:VALARM',`TRIGGER:${gatilho(ev.lembrete)}`,'ACTION:DISPLAY',`DESCRIPTION:${e(ev.titulo)}`,'END:VALARM',
+    'END:VEVENT','END:VCALENDAR'].join('\r\n');
+}
+function baixarIcs(ev){
+  const blob=new Blob([icsDe(ev)],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.rel='noopener';
+  a.download=(ev.titulo.replace(/[^\p{L}\p{N} -]/gu,'').trim().slice(0,40)||'compromisso')+'.ics';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),15000);
+}
+function linkGoogle(ev){
+  const {ini,fim}=instantes(ev);
+  const det=ev.turmaId? 'Turma: '+turmaNome(ev.turmaId) : 'Registro Fácil';
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(ev.titulo)+'&dates='+ini+'/'+fim+'&details='+encodeURIComponent(det);
+}
+async function atualizarBadgeAgenda(){
+  const b=$('#agBadge'); if(!b) return;
+  const hj=isoHoje(); const amanha=isoHoje(new Date(Date.now()+864e5));
+  const n=(await DB.all('eventos')).filter(e=>e.data===hj||e.data===amanha).length;
+  b.hidden=!n; b.textContent=n;
+}
+
+function renderAgendaTab(){
+  const opts=LEMBRETES.map(l=>`<option value="${l[0]}" ${evDraft.lembrete===l[0]?'selected':''}>${l[1]}</option>`).join('');
+  const turmas=cfg.turmas.map(t=>`<option value="${t.id}" ${evDraft.turmaId===t.id?'selected':''}>${esc(t.nome)}</option>`).join('');
+  view.innerHTML=`<h1>Agenda do ano</h1>
+    <p class="muted small" style="margin-top:0">Datas importantes do ano letivo: provas, conselhos, entregas, reuniões. Ao salvar, você manda o compromisso para a agenda do celular com o alarme já marcado.</p>
+    <div class="card">
+      <label for="evTit">O que é</label>
+      <input type="text" id="evTit" value="${esc(evDraft.titulo)}" placeholder="Ex.: Entrega das notas do 3º trimestre">
+      <div class="grid2">
+        <div><label for="evData">Data</label><input type="date" id="evData" value="${evDraft.data}"></div>
+        <div><label for="evHora">Hora</label><input type="time" id="evHora" value="${evDraft.hora}"></div>
+      </div>
+      <label for="evLemb">Avisar</label>
+      <select id="evLemb">${opts}</select>
+      <label for="evTurma">Lançar também na agenda de uma turma <span class="hint">(opcional)</span></label>
+      <select id="evTurma"><option value="">Não lançar</option>${turmas}</select>
+      <button class="btn primary block big" id="evAdd" style="margin-top:14px">Salvar na agenda</button>
+    </div>
+    <div id="evLista" style="margin-top:18px"><p class="muted small">Carregando…</p></div>`;
+  $('#evTit').addEventListener('input',e=>evDraft.titulo=e.target.value);
+  $('#evData').addEventListener('change',e=>evDraft.data=e.target.value);
+  $('#evHora').addEventListener('change',e=>evDraft.hora=e.target.value);
+  $('#evLemb').addEventListener('change',e=>evDraft.lembrete=+e.target.value);
+  $('#evTurma').addEventListener('change',e=>evDraft.turmaId=e.target.value);
+  $('#evAdd').addEventListener('click',async()=>{
+    const titulo=$('#evTit').value.trim(), data=$('#evData').value, hora=$('#evHora').value||'07:00';
+    if(!titulo) return toast('Escreva o que é o compromisso.');
+    if(!data) return toast('Escolha a data.');
+    const ev={id:uid(),titulo,data,hora,lembrete:+$('#evLemb').value,turmaId:$('#evTurma').value||'',criadoEm:new Date().toISOString()};
+    await DB.put(ev,'eventos');
+    if(ev.turmaId){  // espelha na agenda da turma, que aparece na aba Registrar
+      await DB.put({id:uid(),turmaId:ev.turmaId,turmaNome:turmaNome(ev.turmaId),data:ev.data,texto:ev.titulo,criadoEm:ev.criadoEm,eventoId:ev.id},'agenda');
+    }
+    // mantém só a preferência de aviso; turma volta a "não lançar" para não
+    // mandar o próximo compromisso para uma turma sem querer
+    evDraft={titulo:'',data:'',hora:'07:00',lembrete:ev.lembrete,turmaId:''};
+    toast('Salvo. Agora mande para a agenda do celular.',3500);
+    baixarIcs(ev);
+    renderAgendaTab(); atualizarBadgeAgenda();
+  });
+  pintarEventos();
+}
+
+async function pintarEventos(){
+  const box=$('#evLista'); if(!box) return;
+  const todos=(await DB.all('eventos')).sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora));
+  if(!$('#evLista')) return;
+  if(!todos.length){ box.innerHTML='<p class="muted small">Nenhuma data cadastrada ainda.</p>'; return; }
+  const hj=isoHoje();
+  const futuros=todos.filter(e=>e.data>=hj), passados=todos.filter(e=>e.data<hj).reverse();
+  const item=(e,velho)=>`<div class="item"${!velho&&e.data===hj?' style="border-color:var(--warn)"':''}>
+    <div class="when"><b>${e.data.slice(8,10)}</b>${e.data.slice(5,7)}</div><div>
+    <div class="small" style="${!velho&&e.data===hj?'color:var(--warn);font-weight:700':'color:var(--muted)'}">${e.data===hj?'É hoje':`${DIAS_CURTO[parseISO(e.data).getDay()]} · ${br(e.data)}`} · ${e.hora} · avisa ${rotuloLembrete(e.lembrete).toLowerCase()}</div>
+    <div class="body" style="color:var(--ink)">${esc(e.titulo)}</div>
+    ${e.turmaId?`<div class="small muted">Também na agenda de ${esc(turmaNome(e.turmaId))}</div>`:''}
+    <div class="actions">
+      <button class="btn sm primary" data-ics="${e.id}">Agenda do celular</button>
+      <a class="btn sm" href="${esc(linkGoogle(e))}" target="_blank" rel="noopener">Google Agenda</a>
+      <button class="btn sm danger" data-evdel="${e.id}">Excluir</button>
+    </div></div></div>`;
+  box.innerHTML=(futuros.length?`<label>Próximos</label><div class="list">${futuros.map(e=>item(e,false)).join('')}</div>`:'<p class="muted small">Nenhuma data futura cadastrada.</p>')
+    +(passados.length?`<label style="margin-top:18px">Já passaram</label><div class="list" style="opacity:.6">${passados.map(e=>item(e,true)).join('')}</div>`:'');
+  $$('[data-ics]').forEach(b=>b.addEventListener('click',async()=>{
+    const e=await DB.get(b.dataset.ics,'eventos'); if(e){ baixarIcs(e); toast('Abra o arquivo baixado para incluir na agenda.',4000); }
+  }));
+  $$('[data-evdel]').forEach(b=>b.addEventListener('click',async()=>{
+    const e=await DB.get(b.dataset.evdel,'eventos'); if(!e) return;
+    if(!confirm(`Excluir "${e.titulo}" da agenda?${e.turmaId?'\n\nTambém sai da agenda da turma.':''}\n\nO que já foi para a agenda do celular continua lá.`)) return;
+    await DB.del(e.id,'eventos');
+    for(const v of (await DB.all('agenda')).filter(a=>a.eventoId===e.id)) await DB.del(v.id,'agenda');
+    toast('Excluído da agenda'); pintarEventos(); atualizarBadgeAgenda();
+  }));
+}
+
 /* ----- Ajustes ----- */
 function renderCfg(){
   const prov=provedor(); const conta=prov&&prov.conta();
@@ -772,7 +900,7 @@ function renderCfg(){
   ligarForms();
   $('#salvarPerfil').addEventListener('click',()=>{ saveCfg(); toast('Salvo'); renderCfg(); });
   $('#salvarIds').addEventListener('click',()=>{ cfg.msClientId=$('#msId').value.trim(); cfg.gClientId=$('#gId').value.trim(); saveCfg(); OneDrive.msal=null; GDrive.client=null; toast('Identificadores salvos'); renderCfg(); });
-  $('#reset').addEventListener('click',async()=>{ if(!confirm('Apagar cadastro, horário, agendamentos e registros pendentes deste aparelho? Os arquivos já salvos na nuvem não são afetados.')) return; await DB.clear(); await DB.clear('agenda'); localStorage.clear(); cfg=DEFAULT_CFG(); obStep=0; tab='home'; render(); });
+  $('#reset').addEventListener('click',async()=>{ if(!confirm('Apagar cadastro, horário, agendamentos e registros pendentes deste aparelho? Os arquivos já salvos na nuvem não são afetados.')) return; await DB.clear(); await DB.clear('agenda'); await DB.clear('eventos'); localStorage.clear(); cfg=DEFAULT_CFG(); obStep=0; tab='home'; render(); });
 }
 
 /* ---------- Inicialização ---------- */
