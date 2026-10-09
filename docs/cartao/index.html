@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F172A">
+<title>Meu Cartão Digital</title>
+<meta name="description" content="Crie seu cartão digital e grave numa tag NFC em 2 minutos.">
+<script src="qrcode.js"></script>
+<style>
+  :root{
+    --bg:#F1F5F9; --fundo-card:#FFFFFF; --texto:#0F172A; --suave:#64748B; --borda:#E2E8F0;
+    --cor:#2563EB; --ok:#16A34A; --erro:#DC2626;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0B1120; --fundo-card:#111827; --texto:#F1F5F9; --suave:#94A3B8; --borda:#1F2937; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--texto);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       padding:env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom))}
+  main{max-width:460px;margin:0 auto}
+  h1{font-size:1.45rem;margin:20px 0 4px;line-height:1.2}
+  h2{font-size:1.1rem;margin:0 0 10px}
+  p.sub{color:var(--suave);margin:0 0 18px}
+  .bloco{background:var(--fundo-card);border:1px solid var(--borda);border-radius:16px;padding:18px;margin-bottom:14px}
+  label{display:block;font-weight:600;font-size:.92rem;margin:12px 0 4px}
+  label small{font-weight:400;color:var(--suave)}
+  input,textarea{width:100%;font:inherit;color:var(--texto);background:var(--bg);border:1px solid var(--borda);border-radius:10px;padding:11px 12px}
+  textarea{resize:vertical;min-height:70px}
+  input:focus,textarea:focus{outline:2px solid var(--cor);border-color:transparent}
+  .dica{font-size:.82rem;color:var(--suave);margin-top:4px}
+  .cores{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .cores button{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer}
+  .cores button[aria-pressed="true"]{border-color:var(--texto)}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;font:inherit;font-weight:700;border:0;border-radius:12px;
+       padding:14px;margin-top:10px;cursor:pointer;text-decoration:none;color:#fff;background:var(--cor)}
+  .btn.sec{background:transparent;color:var(--texto);border:1px solid var(--borda)}
+  .btn.ok{background:var(--ok)}
+  .btn:disabled{opacity:.6}
+  .aviso{font-size:.88rem;padding:10px 12px;border-radius:10px;margin-top:10px;display:none}
+  .aviso.mostra{display:block}
+  .aviso.erro{background:#FEE2E2;color:#991B1B}
+  .aviso.bom{background:#DCFCE7;color:#166534}
+  /* Cartão */
+  .cartao{border-radius:20px;overflow:hidden;background:var(--fundo-card);border:1px solid var(--borda);margin:18px 0 14px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+  .topo{background:var(--cor);padding:26px 20px 52px;color:#fff;text-align:center}
+  .topo .evento{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+  .avatar{width:92px;height:92px;border-radius:50%;margin:-46px auto 0;display:flex;align-items:center;justify-content:center;
+          font-size:2.1rem;font-weight:800;color:#fff;background:var(--cor);border:5px solid var(--fundo-card)}
+  .corpo{padding:10px 20px 20px;text-align:center}
+  .nome{font-size:1.5rem;font-weight:800;margin:6px 0 2px}
+  .cargo{color:var(--suave);margin:0}
+  .frase{font-size:1.05rem;font-style:italic;margin:14px 0 4px;padding:12px 14px;border-left:4px solid var(--cor);text-align:left;background:var(--bg);border-radius:0 10px 10px 0}
+  .acoes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+  .acoes .btn{margin:0;font-size:.95rem;padding:12px 8px}
+  .acoes .largo{grid-column:1/-1}
+  .rodape{text-align:center;color:var(--suave);font-size:.85rem;margin-top:18px}
+  .rodape a{color:var(--cor);font-weight:700}
+  .qr{display:flex;justify-content:center;background:#fff;border-radius:12px;padding:12px;margin-top:8px}
+  .qr img{width:min(280px,100%);height:auto;image-rendering:pixelated}
+  .link{word-break:break-all;font-size:.8rem;color:var(--suave);background:var(--bg);padding:10px;border-radius:8px;margin-top:8px}
+  details{margin-top:10px}
+  summary{font-weight:700;cursor:pointer;padding:6px 0}
+  ol{padding-left:20px;margin:6px 0}
+  ol li{margin:4px 0}
+  .oculto{display:none}
+</style>
+</head>
+<body>
+<main>
+
+  <!-- ============ FORMULÁRIO ============ -->
+  <section id="telaForm" class="oculto">
+    <h1>Crie seu cartão digital</h1>
+    <p class="sub">Preencha, grave na sua tag NFC e use na rodada de negócios.</p>
+
+    <form id="form" class="bloco" autocomplete="on">
+      <label for="f-nome">Nome *</label>
+      <input id="f-nome" name="nome" required maxlength="40" autocomplete="name" placeholder="Maria Silva">
+
+      <label for="f-cargo">Empresa / profissão</label>
+      <input id="f-cargo" name="cargo" maxlength="50" autocomplete="organization-title" placeholder="Arquiteta · Studio MS">
+
+      <label for="f-frase">Seu posicionamento <small>(uma frase)</small></label>
+      <textarea id="f-frase" name="frase" maxlength="90" placeholder="Ajudo pequenas empresas a vender mais pelo Instagram."></textarea>
+      <div class="dica">Modelo: <b>Ajudo</b> [quem] <b>a</b> [resultado]. <span id="contaFrase">0/90</span></div>
+
+      <label for="f-whats">WhatsApp *</label>
+      <input id="f-whats" name="whats" required inputmode="tel" autocomplete="tel" placeholder="(11) 98765-4321">
+
+      <label for="f-email">E-mail</label>
+      <input id="f-email" name="email" type="email" maxlength="50" autocomplete="email" placeholder="maria@empresa.com.br">
+
+      <label for="f-insta">Instagram</label>
+      <input id="f-insta" name="insta" maxlength="40" placeholder="@mariasilva">
+
+      <label for="f-linkedin">LinkedIn</label>
+      <input id="f-linkedin" name="linkedin" maxlength="80" placeholder="linkedin.com/in/mariasilva">
+
+      <label for="f-site">Site</label>
+      <input id="f-site" name="site" maxlength="60" inputmode="url" placeholder="www.empresa.com.br">
+
+      <label>Cor do cartão</label>
+      <div class="cores" id="cores"></div>
+
+      <button class="btn" type="submit">Criar meu cartão</button>
+      <div class="aviso erro" id="erroForm"></div>
+    </form>
+  </section>
+
+  <!-- ============ CARTÃO (visto por todos) ============ -->
+  <section id="telaCartao" class="oculto">
+    <div class="cartao">
+      <div class="topo"><div class="evento" id="c-evento"></div></div>
+      <div class="avatar" id="c-avatar"></div>
+      <div class="corpo">
+        <div class="nome" id="c-nome"></div>
+        <p class="cargo" id="c-cargo"></p>
+        <div class="frase" id="c-frase"></div>
+        <div class="acoes" id="c-acoes"></div>
+      </div>
+    </div>
+
+    <!-- Só aparece para o dono, logo após criar -->
+    <div id="painelDono" class="oculto">
+      <div class="bloco">
+        <h2>Agora grave na sua tag NFC</h2>
+        <button class="btn ok oculto" id="btnNfc" type="button">📲 Gravar na tag agora</button>
+        <div class="aviso" id="avisoNfc"></div>
+        <button class="btn sec" id="btnCopiar" type="button">Copiar link do cartão</button>
+        <div class="dica" id="tamanho"></div>
+        <details>
+          <summary>Ver o link</summary>
+          <div class="link" id="textoLink"></div>
+        </details>
+
+        <details>
+          <summary>Como gravar com o app NFC Tools</summary>
+          <ol>
+            <li>Toque em <b>Copiar link do cartão</b> (acima).</li>
+            <li>Abra o <b>NFC Tools</b> e vá em <b>Escrever</b>.</li>
+            <li><b>Adicionar um registro</b> → <b>URL / URI</b> → cole o link → <b>OK</b>.</li>
+            <li>Toque em <b>Escrever</b> e encoste a tag no celular.<br>
+              <small>iPhone: encoste no topo do aparelho. Android: no meio das costas.</small></li>
+            <li>⚠️ <b>Não</b> use a opção <b>Bloquear</b>: ela deixa a tag sem poder ser alterada para sempre.</li>
+          </ol>
+        </details>
+      </div>
+
+      <div class="bloco">
+        <h2>Sem NFC? Use o QR code</h2>
+        <p class="dica" style="margin:0">Mostre esta tela: a pessoa aponta a câmera e abre seu cartão.</p>
+        <div class="qr" id="qr"></div>
+      </div>
+
+      <button class="btn sec" id="btnEditar" type="button">✏️ Editar meu cartão</button>
+    </div>
+
+    <p class="rodape" id="rodapeVisitante">Gostou? <a href="./">Crie o seu cartão digital</a></p>
+  </section>
+
+</main>
+
+<script>
+// ===== Ajuste aqui para cada evento =====
+const EVENTO = 'Encontro de Networking · 20/10';
+const CORES = ['#2563EB','#0F766E','#7C3AED','#DB2777','#EA580C','#0F172A'];
+const LIMITE_TAG = 480; // NTAG215 guarda ~496 bytes de dados; deixamos margem
+
+const $ = id => document.getElementById(id);
+let corEscolhida = CORES[0];
+
+// ---- codificação dos dados no próprio link (sem servidor) ----
+const CAMPOS = ['nome','cargo','frase','whats','email','insta','linkedin','site','cor'];
+function codificar(d){
+  const txt = CAMPOS.map(k => (d[k]||'').replace(/\|/g,'/')).join('|').replace(/\|+$/,'');
+  const bytes = new TextEncoder().encode(txt);
+  let bin = ''; bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function decodificar(s){
+  const b64 = s.replace(/-/g,'+').replace(/_/g,'/');
+  const bin = atob(b64 + '==='.slice((b64.length + 3) % 4));
+  const txt = new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+  const partes = txt.split('|');
+  const d = {}; CAMPOS.forEach((k,i) => d[k] = partes[i] || '');
+  return d;
+}
+const baseUrl = () => location.origin + location.pathname;
+const linkDoCartao = d => baseUrl() + '#c=' + codificar(d);
+
+// ---- normalização dos contatos ----
+function soDigitos(s){ return (s||'').replace(/\D/g,''); }
+function whatsInternacional(s){
+  let n = soDigitos(s);
+  if (n.length === 10 || n.length === 11) n = '55' + n; // número brasileiro sem DDI
+  return n;
+}
+function usuarioInsta(s){
+  return (s||'').trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i,'').replace(/^@/,'').replace(/[/?].*$/,'');
+}
+function urlLinkedin(s){
+  s = (s||'').trim(); if (!s) return '';
+  if (/linkedin\.com/i.test(s)) return 'https://' + s.replace(/^https?:\/\//i,'').replace(/^www\./i,'www.');
+  return 'https://www.linkedin.com/in/' + s.replace(/^@/,'').replace(/^\/+/,'');
+}
+function urlSite(s){
+  s = (s||'').trim(); if (!s) return '';
+  return /^https?:\/\//i.test(s) ? s : 'https://' + s;
+}
+function formatarFone(n){
+  const m = n.match(/^55(\d{2})(\d{4,5})(\d{4})$/);
+  return m ? `(${m[1]}) ${m[2]}-${m[3]}` : '+' + n;
+}
+function iniciais(nome){
+  const p = nome.trim().split(/\s+/).filter(Boolean);
+  return ((p[0]||'')[0]||'' ) + (p.length > 1 ? p[p.length-1][0] : '');
+}
+
+// ---- vCard para "Salvar contato" ----
+function vcard(d){
+  const esc = s => (s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+  const p = d.nome.trim().split(/\s+/);
+  const sobrenome = p.length > 1 ? p.pop() : '';
+  const linhas = ['BEGIN:VCARD','VERSION:3.0',
+    `N:${esc(sobrenome)};${esc(p.join(' '))};;;`, `FN:${esc(d.nome)}`];
+  if (d.cargo) linhas.push(`TITLE:${esc(d.cargo)}`);
+  if (d.whats) linhas.push(`TEL;TYPE=CELL:+${whatsInternacional(d.whats)}`);
+  if (d.email) linhas.push(`EMAIL;TYPE=INTERNET:${esc(d.email)}`);
+  if (d.site) linhas.push(`URL:${esc(urlSite(d.site))}`);
+  if (d.linkedin) linhas.push(`URL;TYPE=LinkedIn:${esc(urlLinkedin(d.linkedin))}`);
+  if (d.insta) linhas.push(`URL;TYPE=Instagram:https://instagram.com/${esc(usuarioInsta(d.insta))}`);
+  const nota = [d.frase, 'Conhecido(a) no ' + EVENTO].filter(Boolean).join(' — ');
+  linhas.push(`NOTE:${esc(nota)}`, 'END:VCARD');
+  return linhas.join('\r\n');
+}
+
+// ---- telas ----
+function mostrar(tela){
+  $('telaForm').classList.toggle('oculto', tela !== 'form');
+  $('telaCartao').classList.toggle('oculto', tela !== 'cartao');
+  window.scrollTo(0,0);
+}
+
+function botao(rotulo, href, extra){
+  const a = document.createElement('a');
+  a.className = 'btn' + (extra ? ' ' + extra : '');
+  a.textContent = rotulo; a.href = href;
+  if (/^https?:/.test(href)) { a.target = '_blank'; a.rel = 'noopener'; }
+  return a;
+}
+
+function renderCartao(d, dono){
+  document.documentElement.style.setProperty('--cor', CORES[+d.cor] || CORES[0]);
+  document.title = d.nome + ' · Cartão Digital';
+  $('c-evento').textContent = EVENTO;
+  $('c-avatar').textContent = iniciais(d.nome).toUpperCase();
+  $('c-nome').textContent = d.nome;
+  $('c-cargo').textContent = d.cargo;
+  $('c-cargo').classList.toggle('oculto', !d.cargo);
+  $('c-frase').textContent = d.frase ? '“' + d.frase + '”' : '';
+  $('c-frase').classList.toggle('oculto', !d.frase);
+
+  const acoes = $('c-acoes'); acoes.innerHTML = '';
+  if (d.whats) acoes.append(botao('💬 WhatsApp ' + formatarFone(whatsInternacional(d.whats)),
+    'https://wa.me/' + whatsInternacional(d.whats) + '?text=' + encodeURIComponent('Olá, ' + d.nome.split(' ')[0] + '! Nos conhecemos no ' + EVENTO + '.'), 'largo ok'));
+  const salvar = botao('📇 Salvar contato', '#', 'largo');
+  salvar.addEventListener('click', e => {
+    e.preventDefault();
+    const blob = new Blob([vcard(d)], {type:'text/vcard;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = d.nome.replace(/[^\p{L}\p{N} ]/gu,'').trim().replace(/\s+/g,'_') + '.vcf';
+    document.body.append(a); a.click(); a.remove();
+  });
+  acoes.append(salvar);
+  if (d.insta) acoes.append(botao('📸 Instagram', 'https://instagram.com/' + encodeURIComponent(usuarioInsta(d.insta)), 'sec'));
+  if (d.linkedin) acoes.append(botao('💼 LinkedIn', urlLinkedin(d.linkedin), 'sec'));
+  if (d.email) acoes.append(botao('✉️ E-mail', 'mailto:' + d.email, 'sec'));
+  if (d.site) acoes.append(botao('🌐 Site', urlSite(d.site), 'sec'));
+  // número ímpar de botões secundários: o último ocupa a linha toda
+  const secs = acoes.querySelectorAll('.sec');
+  if (secs.length % 2) secs[secs.length-1].classList.add('largo');
+
+  $('painelDono').classList.toggle('oculto', !dono);
+  $('rodapeVisitante').classList.toggle('oculto', dono);
+  if (dono) prepararPainelDono(d);
+  mostrar('cartao');
+}
+
+function prepararPainelDono(d){
+  const link = linkDoCartao(d);
+  $('textoLink').textContent = link;
+  const bytes = new TextEncoder().encode(link).length;
+  $('tamanho').textContent = bytes <= LIMITE_TAG
+    ? `✅ Cabe na tag NTAG215 (${bytes} de ~${LIMITE_TAG} bytes).`
+    : `⚠️ Link grande demais para a tag (${bytes} bytes). Encurte o posicionamento ou remova algum campo.`;
+
+  // QR code
+  try {
+    const qr = qrcode(0, 'L'); qr.addData(link); qr.make();
+    $('qr').innerHTML = qr.createImgTag(6, 8);
+  } catch(e){ $('qr').textContent = 'Não foi possível gerar o QR code.'; }
+
+  // Gravação direta (Chrome no Android)
+  const aviso = $('avisoNfc');
+  aviso.className = 'aviso';
+  if ('NDEFReader' in window) {
+    $('btnNfc').classList.remove('oculto');
+    $('btnNfc').onclick = async () => {
+      aviso.className = 'aviso bom mostra';
+      aviso.textContent = 'Encoste a tag nas costas do celular…';
+      try {
+        await new NDEFReader().write({ records: [{ recordType: 'url', data: link }] });
+        aviso.className = 'aviso bom mostra';
+        aviso.textContent = '🎉 Tag gravada! Encoste no celular de alguém para testar.';
+      } catch (e) {
+        aviso.className = 'aviso erro mostra';
+        aviso.textContent = 'Não deu certo (' + (e.message || e.name) + '). Verifique se o NFC está ligado ou use o NFC Tools.';
+      }
+    };
+  }
+}
+
+// ---- formulário ----
+function montarCores(){
+  const box = $('cores'); box.innerHTML = '';
+  CORES.forEach(c => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.style.background = c; b.setAttribute('aria-label','Cor ' + c);
+    b.setAttribute('aria-pressed', c === corEscolhida);
+    b.onclick = () => { corEscolhida = c; montarCores(); };
+    box.append(b);
+  });
+}
+
+function carregarSalvo(){
+  try { return JSON.parse(localStorage.getItem('meuCartao') || 'null'); } catch(e){ return null; }
+}
+function salvar(d){ try { localStorage.setItem('meuCartao', JSON.stringify(d)); } catch(e){} }
+
+function abrirForm(){
+  const d = carregarSalvo();
+  if (d) {
+    CAMPOS.forEach(k => { const el = $('f-' + k); if (el) el.value = d[k] || ''; });
+    corEscolhida = CORES[+d.cor] || CORES[0];
+  }
+  $('contaFrase').textContent = $('f-frase').value.length + '/90';
+  montarCores();
+  history.replaceState(null, '', baseUrl());
+  mostrar('form');
+}
+
+$('f-frase').addEventListener('input', e => $('contaFrase').textContent = e.target.value.length + '/90');
+
+$('form').addEventListener('submit', e => {
+  e.preventDefault();
+  const d = {};
+  CAMPOS.forEach(k => { const el = $('f-' + k); d[k] = el ? el.value.trim().replace(/\s+/g,' ') : ''; });
+  d.cor = String(Math.max(0, CORES.indexOf(corEscolhida))); // índice da cor: link mais curto
+  const erro = $('erroForm');
+  const n = whatsInternacional(d.whats);
+  if (n.length < 12) { erro.textContent = 'Confira o WhatsApp: coloque o DDD e o número.'; erro.classList.add('mostra'); return; }
+  erro.classList.remove('mostra');
+  d.whats = n; // só dígitos com DDI: link mais curto
+  salvar(d);
+  history.replaceState(null, '', linkDoCartao(d));
+  renderCartao(d, true);
+});
+
+$('btnEditar').onclick = abrirForm;
+$('btnCopiar').onclick = async () => {
+  const link = $('textoLink').textContent;
+  try { await navigator.clipboard.writeText(link); }
+  catch(e){ const r = document.createRange(); r.selectNodeContents($('textoLink')); getSelection().removeAllRanges(); getSelection().addRange(r); document.execCommand('copy'); }
+  $('btnCopiar').textContent = '✅ Link copiado!';
+  setTimeout(() => $('btnCopiar').textContent = 'Copiar link do cartão', 2500);
+};
+
+// ---- início ----
+function iniciar(){
+  const m = location.hash.match(/^#c=([A-Za-z0-9_-]+)/);
+  if (m) {
+    try {
+      const d = decodificar(m[1]);
+      if (!d.nome) throw new Error('vazio');
+      const meu = carregarSalvo();
+      renderCartao(d, !!meu && codificar(meu) === m[1]);
+      return;
+    } catch(e){ /* link inválido: cai no formulário */ }
+  }
+  abrirForm();
+}
+window.addEventListener('hashchange', iniciar);
+iniciar();
+</script>
+</body>
+</html>
